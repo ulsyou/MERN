@@ -1,0 +1,122 @@
+.product-details {
+    margin-top: 30px;
+}
+
+.productdetails {
+    display: flex;
+    justify-content: center;
+}
+
+.productdetails-img {
+    width: 400px;
+}
+
+.productdetails-list {
+    display: flex;
+    justify-content: space-around;
+}
+
+.productdetails-item {
+    width: 100px;
+}
+
+.productdetails-name {
+    font-size: 3.6rem;
+    color: #686868;
+    margin: 20px 0 10px;
+    font-weight: 400;
+}
+.productdetails-price {
+    font-size: 2rem;
+    color: var(--sub-color);
+    font-weight: 500;
+    margin: 0 5px;
+}
+.productdetails-btn {
+    font-size: 1.2rem;
+    color: #fff;
+    background-color: var(--sub-color);
+    padding: 5px 20px;
+    margin: 5px 0 15px;
+    display: inline-block;
+}
+.productdetails-code,
+.productdetails-brand {
+    font-weight: 500;
+    margin: 5px 0;
+}
+.productdetails-code-span,
+.productdetails-brand-span {
+    font-weight: 400;
+    margin: 0 5px;
+}
+
+.productdetails-dropdown {
+    width: 160px !important;
+    height: 40px;
+    font-size: 1.6rem !important;
+    margin: 10px 0;
+}
+
+.productdetails-select {
+    width: 220px;
+    height: 40px;
+    padding: 4px 8px;
+    border: 1px solid #686868;
+}
+
+.productdetails-buy-btn {
+    text-transform: uppercase;
+    font-size: 1.6rem;
+    color: #fff;
+    background-color: var(--primary-color);
+    padding: 12.5px 20px;
+    margin-left: 5px;
+}
+
+.productdetails-hotline-text {
+    font-size: 1.4rem;
+    font-style: italic;
+    margin: 30px 0 10px;
+}
+
+.productdetails-hotline-block {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--sub-color);
+    display: inline-block;
+    padding: 12px 12px 10px;
+    margin-bottom: 30px;
+    position: relative;
+
+    &::after {
+        content: '';
+        width: 100%;
+        height: 6px;
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        background-repeat: repeat-x;
+        background: url('https://bizweb.dktcdn.net/100/117/632/themes/157694/assets/border-pink.png');
+    }
+}
+
+.productdetais-more-info {
+    margin-top: 50px;
+}
+
+.productdetails-info-wrap {
+    margin-bottom: 30px;
+}
+
+.productdetails-lable {
+    font-size: 2.4rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+.productdetails-info {
+    margin-top: 15px;
+}

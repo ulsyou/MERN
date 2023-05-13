@@ -1,0 +1,26 @@
+.sell-product {
+    margin-bottom: 20px;
+    display: flex;
+}
+
+.product-img {
+    height: 120px;
+    margin-right: 20px;
+}
+
+.product-title {
+    font-size: 1.4rem;
+    color: #686868;
+}
+
+.product-new-price {
+    font-size: 1.6rem;
+    color: var(--sub-color);
+    padding: 8px 0;
+}
+
+.product-old-price {
+    font-size: 1.4rem;
+    color: #686868;
+    text-decoration-line: line-through;
+}

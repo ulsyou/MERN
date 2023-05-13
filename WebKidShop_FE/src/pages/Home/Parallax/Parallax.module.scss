@@ -1,0 +1,17 @@
+.parallax {
+    background-image: url('https://bizweb.dktcdn.net/100/117/632/themes/157694/assets/bg-para.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.parallax-section {
+    background-color: rgba($color: #000000, $alpha: 0.35);
+    padding: 40px 0;
+}
+
+.parallax-lable {
+    padding-bottom: 40px;
+    font-size: 2.4rem;
+    color: #fff;
+    font-weight: 900;
+}

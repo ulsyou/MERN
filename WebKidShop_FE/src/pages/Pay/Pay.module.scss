@@ -1,0 +1,71 @@
+.mt-20 {
+    margin-top: 20px;
+}
+
+.pay-home {
+    font-size: 2.8rem;
+    padding: 20px 0;
+    display: block;
+}
+
+.pay-form-group {
+    margin-bottom: 20px;
+}
+
+.pay-lable {
+    font-size: 1.8rem;
+    padding-bottom: 10px;
+}
+
+.pay-input {
+    margin-bottom: 10px;
+    min-height: 40px;
+    font-size: 1.6rem !important;
+}
+
+.pay-input-text {
+    font-size: 1.4rem !important;
+    height: 44px !important;
+}
+
+.pay-input-textarea {
+    font-size: 1.4rem !important;
+    height: 70px !important;
+}
+
+.pay-radio {
+    border: 1px solid #ddd;
+    padding: 12px;
+
+    input {
+        justify-content: center;
+        margin: 0 !important;
+        margin-right: 12px !important;
+    }
+}
+
+.pay-order {
+    padding: 70px 20px 0;
+    border: 1px solid #ddd;
+}
+
+.display-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.4rem;
+    padding: 5px;
+}
+
+.pay-btn-back {
+    color: #2a9dcc;
+    font-size: 1.4rem;
+}
+
+.pay-btn-buy {
+    display: block;
+    color: #fff;
+    background-color: #357ebd;
+    text-transform: uppercase;
+    padding: 12px 24px;
+}

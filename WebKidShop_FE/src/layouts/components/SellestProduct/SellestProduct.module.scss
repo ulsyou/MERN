@@ -1,0 +1,24 @@
+.sellest-product-lable {
+    margin-top: 40px;
+    height: 40px;
+    background-color: var(--sub-color);
+    text-transform: uppercase;
+    font-size: 1.6rem;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 20px;
+
+    &::after {
+        content: '';
+        height: 6px;
+        width: 100%;
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        z-index: 1;
+        background: url('https://bizweb.dktcdn.net/100/117/632/themes/157694/assets/border-pink.png') repeat-x;
+    }
+}

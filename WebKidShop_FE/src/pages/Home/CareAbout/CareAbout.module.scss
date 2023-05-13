@@ -1,0 +1,28 @@
+.careabout-lable {
+    padding: 30px 0;
+    color: var(--primary-color);
+    font-size: 2.4rem;
+    font-weight: bolder;
+    text-transform: uppercase;
+}
+
+.careabout-desc {
+    margin-bottom: 40px;
+    font-weight: 400;
+    color: #686868;
+}
+
+.careabout-row {
+    position: relative;
+    padding: 50px 50px 90px;
+
+    &::before {
+        content: '';
+        height: 6px;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: url('https://bizweb.dktcdn.net/100/117/632/themes/157694/assets/border-gr.png') repeat-x;
+    }
+}

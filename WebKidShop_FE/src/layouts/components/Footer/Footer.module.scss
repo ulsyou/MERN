@@ -1,0 +1,72 @@
+.quicklinks {
+    background-color: #eee;
+    position: relative;
+    padding: 50px 0;
+
+    &::before {
+        content: '';
+        width: 100%;
+        height: 6px;
+        position: absolute;
+        top: -6px;
+        left: 0;
+        background: url('https://bizweb.dktcdn.net/100/117/632/themes/157694/assets/bor-footer.png') repeat-x;
+    }
+}
+
+.quicklinks-title {
+    color: #686868;
+    padding: 25px 0px;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1.8rem;
+    user-select: none;
+
+    &:hover {
+        cursor: text;
+    }
+}
+
+.quicklinks-btn,
+.quicklinks-text {
+    padding: 16px 0px;
+    color: #686868;
+    font-size: 1.4rem;
+    text-transform: unset;
+    padding: 0;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.quicklinks-btn {
+    justify-content: flex-start;
+    &:hover {
+        color: var(--primary-color);
+        cursor: pointer;
+    }
+}
+
+.footer {
+    background-color: var(--primary-color);
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-text {
+    font-size: 1.6rem;
+    color: #fff;
+}
+
+@media (max-width: 991px) and (min-width: 576px) {
+    .quicklinks-title {
+        min-height: 80px;
+    }
+
+    .quicklinks-btn,
+    .quicklinks-text {
+        min-height: 30px;
+    }
+}
