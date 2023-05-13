@@ -12,6 +12,13 @@ Project is created with:
 * ExpressJS version: 4.18.2
 * ReactJS version: 18.2.0
 * NodeJS version: 18.15.0
+* Paypal API version: 1.8.1
+
+## Connect Application with Database
+```
+Open MongoDB compass
+Connect with URI: mongodb+srv://admin:admin@cluster0.bb2dwct.mongodb.net/WebKidShop?retryWrites=true&w=majority
+```
 	
 ## Setup
 To run this project, install it locally using npm:
