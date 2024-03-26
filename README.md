@@ -4,7 +4,7 @@
 * [Setup](#setup)
 
 ## General info
-This project made by `nguyenchihai2011 - Frontend dev` and `ulsyou - Backend dev`.
+This project made by `nguyenchihai2011 - Frontend` and `ulsyou - Backend`.
 	
 ## Technologies
 Project is created with:
