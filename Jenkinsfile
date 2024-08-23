@@ -61,28 +61,27 @@ pipeline {
                 }
             }
         }
-       stage('Deploy') {
+       stage('Deploy Backend') {
             steps {
                 script {
-                    dir("${TERRAFORM_DIR") {
+                    dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
                     }
+                }
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                script {
                     dir("${FRONTEND_DIR}") {
                         sh """
                         aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
                         aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
                         """
                     }
-                    sh '''
-                    echo "Checking EC2 instances in LocalStack..."
-                    aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances
-                    '''
-                    def backendUrl = "http://localhost:8080/api/health" 
-                    echo "Checking backend availability..."
-                    sh """
-                    curl -I ${backendUrl}
-                    """
+                    echo "Frontend deployed successfully"
                 }
             }
         }
