@@ -33,6 +33,14 @@ pipeline {
             }
         }
 
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    sh 'docker-compose build'
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 script {
