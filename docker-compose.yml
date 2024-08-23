@@ -24,7 +24,7 @@ services:
     depends_on:
       - mongodb
     environment:
-      - MONGO_URL=mongodb://mongodb:27017/webkidshop
+      - MONGO_URL=mongodb+srv://admin:admin@cluster0.x3gvp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
       - PAYPAL_API_VERSION=1.8.1
     networks:
       - webkidshop-network
