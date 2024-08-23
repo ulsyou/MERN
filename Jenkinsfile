@@ -22,15 +22,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    # Cập nhật danh sách gói và cài đặt các phụ thuộc
-                    apt-get update && apt-get install -y python3-pip unzip curl
-
-                    # Cài đặt terraform-local
+                    apt-get update && apt-get install -y 
                     if ! command -v tflocal &> /dev/null; then
                         pip install terraform-local
                     fi
-
-                    # Cài đặt AWS CLI
                     if ! command -v aws &> /dev/null; then
                         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                         unzip -o awscliv2.zip
@@ -45,12 +40,9 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Build backend
                     dir("${BACKEND_DIR}") {
                         sh 'npm install'
                     }
-        
-                    // Build frontend
                     dir("${FRONTEND_DIR}") {
                         sh 'npm install --ignore-scripts'
                         sh 'npm run build'
@@ -62,7 +54,6 @@ pipeline {
         stage('Start LocalStack') {
             steps {
                 script {
-                    // Khởi động LocalStack bằng Docker Compose
                     sh '''
                         docker-compose up -d
                         docker-compose ps
@@ -70,33 +61,38 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy') {
+       stage('Deploy') {
             steps {
                 script {
-                    // Triển khai backend lên EC2 local sử dụng tflocal
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
                     }
-        
-                    // Triển khai frontend lên S3 (LocalStack)
                     dir("${FRONTEND_DIR}") {
                         sh """
                         aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
                         aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
                         """
                     }
-        
-                    // In ra thông báo kiểm tra
-                    echo "Frontend deployed successfully to LocalStack S3."
+                    sh '''
+                    echo "Checking EC2 instances in LocalStack..."
+                    aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances
+                    '''
+                    def backendUrl = "http://localhost:8080/api/health" 
+                    echo "Checking backend availability..."
+                    sh """
+                    curl -I ${backendUrl}
+                    """
                 }
             }
         }
         stage ('Check file upload'){
             steps {
                 script {
-                    sh """ aws --endpoint-url=http://localhost:4566 s3 ls s3://webkidshop-frontend --recursive """
+                    sh """ 
+                    aws --endpoint-url=http://localhost:4566 ec2 describe-instances
+                    aws --endpoint-url=http://localhost:4566 s3 ls s3://webkidshop-frontend --recursive
+                    """
                 }
             }
         }
@@ -104,7 +100,6 @@ pipeline {
     post {
         always {
             script {
-                // Dừng LocalStack
                 sh '''
                     docker-compose down || { echo "docker-compose down failed"; exit 1; }
                 '''
@@ -112,10 +107,10 @@ pipeline {
             cleanWs()
         }
         success {
-            echo 'Build và Deploy thành công!'
+            echo 'Build Success!'
         }
         failure {
-            echo 'Build hoặc Deploy thất bại.'
+            echo 'Build Failed.'
         }
     }
 }
