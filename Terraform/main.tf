@@ -15,12 +15,20 @@ resource "aws_s3_bucket" "frontend_bucket" {
   bucket = "webkidshop-frontend-bucket"
 }
 
-resource "aws_instance" "webkidshop_backend" {
+resource "aws_instance" "backend_instance" {
   ami           = "ami-0c55b159cbfafe1f0"  
   instance_type = "t2.micro"
+
   tags = {
     Name = "webkidshop-backend"
   }
+  
+  user_data = <<-EOF
+              #!/bin/bash
+              cd /home/ubuntu
+              git clone https://github.com/your-repo/your-backend-repo.git
+              cd your-backend-repo
+              npm install
+              npm start
+              EOF
 }
-
-
