@@ -93,6 +93,13 @@ pipeline {
                 }
             }
         }
+        stage ('Check file upload'){
+            steps {
+                script {
+                    sh """ aws --endpoint-url=http://localhost:4566 s3 ls s3://webkidshop-frontend --recursive """
+                }
+            }
+        }
     }
     post {
         always {
