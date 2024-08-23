@@ -1,5 +1,4 @@
 version: "3.8"
-
 services:
   mongodb:
     image: mongo:6.0
@@ -12,7 +11,10 @@ services:
       - webkidshop-network
 
   backend:
-    image: webkidshop-backend:latest  
+    build:
+      context: ./WebKidShop_BE
+      dockerfile: Dockerfile
+    image: webkidshop-backend:latest
     container_name: webkidshop_backend
     working_dir: /usr/src/app
     volumes:
@@ -30,7 +32,10 @@ services:
       - webkidshop-network
 
   frontend:
-    image: webkidshop-frontend:latest  
+    build:
+      context: ./WebKidShop_FE
+      dockerfile: Dockerfile
+    image: webkidshop-frontend:latest
     container_name: webkidshop_frontend
     working_dir: /usr/src/app
     volumes:
