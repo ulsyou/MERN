@@ -1,22 +1,10 @@
 pipeline {
-    agent {
-        docker {
-            image 'your-custom-docker-image:tag'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
-
-    parameters {
-        string(name: 'MONGO_VERSION', defaultValue: '6.0', description: 'MongoDB version')
-        string(name: 'NODE_VERSION', defaultValue: '18.15.0', description: 'Node.js version')
-        string(name: 'S3_BUCKET', defaultValue: 'webkidshop-frontend-bucket', description: 'S3 bucket for frontend deployment')
-    }
+    agent any
 
     environment {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-        LOCALSTACK_URL = 'https://localhost.localstack.cloud:4566'
+        LOCALSTACK_URL = 'http://localhost:4566'
         TERRAFORM_DIR = 'terraform'
-        KUBERNETES_CONFIG = 'k8s'
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
     }
@@ -28,40 +16,20 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            parallel {
-                stage('Build Frontend') {
-                    steps {
-                        dir("${FRONTEND_DIR}") {
-                            sh 'npm install'
-                            sh 'npm run build'
-                        }
+        stage('Build and Test') {
+            steps {
+                script {
+                    // Build và test backend
+                    dir("${BACKEND_DIR}") {
+                        sh 'npm install'
+                        sh 'npm test'
                     }
-                }
-                stage('Build Backend') {
-                    steps {
-                        dir("${BACKEND_DIR}") {
-                            sh 'npm install'
-                        }
-                    }
-                }
-            }
-        }
 
-        stage('Test') {
-            parallel {
-                stage('Test Frontend') {
-                    steps {
-                        dir("${FRONTEND_DIR}") {
-                            sh 'npm test'
-                        }
-                    }
-                }
-                stage('Test Backend') {
-                    steps {
-                        dir("${BACKEND_DIR}") {
-                            sh 'npm test'
-                        }
+                    // Build và test frontend
+                    dir("${FRONTEND_DIR}") {
+                        sh 'npm install'
+                        sh 'npm test'
+                        sh 'npm run build'
                     }
                 }
             }
@@ -69,34 +37,30 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker-compose build'
+                script {
+                    sh 'docker-compose build'
+                }
             }
         }
 
         stage('Deploy') {
-            parallel {
-                stage('Deploy Backend to EC2') {
-                    steps {
-                        dir("${TERRAFORM_DIR}") {
-                            sh 'tflocal init'
-                            sh 'tflocal apply -auto-approve'
-                        }
+            steps {
+                script {
+                    // Khởi động các services
+                    sh 'docker-compose up -d'
+
+                    // Triển khai backend lên EC2 local sử dụng tflocal
+                    dir("${TERRAFORM_DIR}") {
+                        sh 'tflocal init'
+                        sh 'tflocal apply -auto-approve'
                     }
-                }
-                stage('Deploy Frontend to S3') {
-                    steps {
-                        dir("${FRONTEND_DIR}") {
-                            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                                sh "aws --endpoint-url=${LOCALSTACK_URL} s3 sync ./build s3://${params.S3_BUCKET}"
-                            }
-                        }
-                    }
-                }
-                stage('Deploy to Kubernetes') {
-                    steps {
-                        dir("${KUBERNETES_CONFIG}") {
-                            sh 'kubectl apply -f .'
-                        }
+
+                    // Triển khai frontend lên S3 (LocalStack)
+                    dir("${FRONTEND_DIR}") {
+                        sh """
+                        aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend
+                        aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
+                        """
                     }
                 }
             }
@@ -105,13 +69,17 @@ pipeline {
 
     post {
         always {
+            script {
+                // Dừng và xóa containers
+                sh 'docker-compose down'
+            }
             cleanWs()
         }
         success {
-            echo 'Build and Deploy successful!'
+            echo 'Build và Deploy thành công!'
         }
         failure {
-            echo 'Build or Deploy failed.'
+            echo 'Build hoặc Deploy thất bại.'
         }
     }
 }
