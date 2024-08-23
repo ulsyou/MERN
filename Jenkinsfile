@@ -94,21 +94,22 @@ pipeline {
             }
         }
 
-    post {
-        always {
-            script {
-                // Dừng LocalStack
-                sh '''
-                    docker-compose down || { echo "docker-compose down failed"; exit 1; }
-                '''
+        post {
+            always {
+                script {
+                    // Dừng LocalStack
+                    sh '''
+                        docker-compose down || { echo "docker-compose down failed"; exit 1; }
+                    '''
+                }
+                cleanWs()
             }
-            cleanWs()
-        }
-        success {
-            echo 'Build và Deploy thành công!'
-        }
-        failure {
-            echo 'Build hoặc Deploy thất bại.'
+            success {
+                echo 'Build và Deploy thành công!'
+            }
+            failure {
+                echo 'Build hoặc Deploy thất bại.'
+            }
         }
     }
 }
