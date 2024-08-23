@@ -11,10 +11,7 @@ services:
       - webkidshop-network
 
   backend:
-    build:
-      context: ./WebKidShop_BE
-      dockerfile: Dockerfile
-    image: webkidshop-backend:latest
+    image: node:18.15.0  # Sử dụng image Node.js có sẵn
     container_name: webkidshop_backend
     working_dir: /usr/src/app
     volumes:
@@ -32,10 +29,7 @@ services:
       - webkidshop-network
 
   frontend:
-    build:
-      context: ./WebKidShop_FE
-      dockerfile: Dockerfile
-    image: webkidshop-frontend:latest
+    image: node:18.15.0  # Sử dụng image Node.js có sẵn
     container_name: webkidshop_frontend
     working_dir: /usr/src/app
     volumes:
