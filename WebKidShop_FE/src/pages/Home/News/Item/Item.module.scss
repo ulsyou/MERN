@@ -1,0 +1,25 @@
+.news {
+    display: flex;
+    padding: 0 20px 50px;
+}
+
+.news-img {
+    height: 100px;
+    padding-right: 15px;
+}
+
+.news-info {
+    font-size: 1.4rem;
+    color: #686868;
+}
+
+.news-title {
+    font-weight: 600;
+    padding-bottom: 8px;
+}
+
+@media (max-width: 991px) and (min-width: 576px) {
+    .news-img {
+        width: 105px;
+    }
+}

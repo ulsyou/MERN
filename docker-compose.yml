@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - webkidshop-network
+
+  backend:
+    image: node:18.15.0
+    container_name: webkidshop_backend
+    working_dir: /usr/src/app
+    volumes:
+      - ./WebKidShop_BE:/usr/src/app
+      - /usr/src/app/node_modules
+    command: sh -c "npm install && npm start"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/webkidshop
+      - PAYPAL_API_VERSION=1.8.1
+    networks:
+      - webkidshop-network
+
+  frontend:
+    image: node:18.15.0
+    container_name: webkidshop_frontend
+    working_dir: /usr/src/app
+    volumes:
+      - ./WebKidShop_FE:/usr/src/app
+      - /usr/src/app/node_modules
+    command: sh -c "npm install && npm start"
+    ports:
+      - "3000:3000"
+    networks:
+      - webkidshop-network
+
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - webkidshop-network
+
+networks:
+  webkidshop-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

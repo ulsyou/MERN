@@ -1,0 +1,27 @@
+.parallax-item {
+    display: flex;
+    margin-bottom: 30px;
+}
+
+.item-icon {
+    font-size: 5rem;
+    color: #fff;
+    min-width: 100px;
+    margin-left: 15px;
+}
+
+.item-info {
+    color: #fff;
+    margin-right: 30px;
+}
+
+.item-title {
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    font-weight: 400;
+}
+
+.item-desc {
+    font-size: 1.4rem;
+    font-weight: 400;
+}
