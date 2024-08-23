@@ -6,6 +6,10 @@ pipeline {
         TERRAFORM_DIR = 'terraform'
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
+        PATH = "$HOME/.local/bin:$PATH" 
+        AWS_ACCESS_KEY_ID = 'test'
+        AWS_SECRET_ACCESS_KEY = 'test'
+        AWS_DEFAULT_REGION = 'us-east-1'
     }
 
     stages {
