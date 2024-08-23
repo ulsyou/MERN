@@ -23,10 +23,10 @@ pipeline {
                     dir("${BACKEND_DIR}") {
                         sh 'npm install'
                     }
-
+        
                     // Build frontend
                     dir("${FRONTEND_DIR}") {
-                        sh 'npm install'
+                        sh 'npm install --ignore-scripts'
                         sh 'npm run build'
                     }
                 }
