@@ -89,7 +89,7 @@ pipeline {
                     }
         
                     // In ra URL truy cập trang web (thay thế bằng IP công cộng của EC2)
-                    echo "Frontend URL: http://<ec2-public-ip>:80"
+                    echo "Frontend URL: http://localhost:4566/webkidshop-frontend/index.html"
                 }
             }
         }
