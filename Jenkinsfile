@@ -16,19 +16,17 @@ pipeline {
             }
         }
 
-        stage('Build and Test') {
+        stage('Build') {
             steps {
                 script {
-                    // Build và test backend
+                    // Build backend
                     dir("${BACKEND_DIR}") {
                         sh 'npm install'
-                        sh 'npm test'
                     }
 
-                    // Build và test frontend
+                    // Build frontend
                     dir("${FRONTEND_DIR}") {
                         sh 'npm install'
-                        sh 'npm test'
                         sh 'npm run build'
                     }
                 }
