@@ -15,104 +15,12 @@ resource "aws_s3_bucket" "frontend_bucket" {
   bucket = "webkidshop-frontend-bucket"
 }
 
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
-
-resource "kubernetes_namespace" "webkidshop" {
-  metadata {
-    name = "webkidshop"
+resource "aws_instance" "webkidshop_backend" {
+  ami           = "ami-0c55b159cbfafe1f0"  
+  instance_type = "t2.micro"
+  tags = {
+    Name = "webkidshop-backend"
   }
 }
 
-resource "kubernetes_deployment" "backend_deployment" {
-  metadata {
-    name      = "webkidshop-backend"
-    namespace = kubernetes_namespace.webkidshop.metadata[0].name
-  }
-  spec {
-    replicas = 2
-    selector {
-      match_labels = {
-        app = "webkidshop-backend"
-      }
-    }
-    template {
-      metadata {
-        labels = {
-          app = "webkidshop-backend"
-        }
-      }
-      spec {
-        container {
-          name  = "backend"
-          image = "webkidshop-backend:latest"
-        }
-      }
-    }
-  }
-}
 
-resource "kubernetes_deployment" "frontend_deployment" {
-  metadata {
-    name      = "webkidshop-frontend"
-    namespace = kubernetes_namespace.webkidshop.metadata[0].name
-  }
-  spec {
-    replicas = 2
-    selector {
-      match_labels = {
-        app = "webkidshop-frontend"
-      }
-    }
-    template {
-      metadata {
-        labels = {
-          app = "webkidshop-frontend"
-        }
-      }
-      spec {
-        container {
-          name  = "frontend"
-          image = "webkidshop-frontend:latest"
-        }
-      }
-    }
-  }
-}
-
-resource "kubernetes_service" "backend_service" {
-  metadata {
-    name      = "webkidshop-backend-service"
-    namespace = kubernetes_namespace.webkidshop.metadata[0].name
-  }
-  spec {
-    selector = {
-      app = "webkidshop-backend"
-    }
-    port {
-      port        = 80
-      target_port = 5000
-      protocol    = "TCP"
-    }
-    type = "LoadBalancer"
-  }
-}
-
-resource "kubernetes_service" "frontend_service" {
-  metadata {
-    name      = "webkidshop-frontend-service"
-    namespace = kubernetes_namespace.webkidshop.metadata[0].name
-  }
-  spec {
-    selector = {
-      app = "webkidshop-frontend"
-    }
-    port {
-      port        = 80
-      target_port = 3000
-      protocol    = "TCP"
-    }
-    type = "LoadBalancer"
-  }
-}
