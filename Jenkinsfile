@@ -67,6 +67,7 @@ pipeline {
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
+                        sh 'curl http://localhost:4566/_localstack/health'
                     }
                 }
             }
