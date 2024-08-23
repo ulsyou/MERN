@@ -99,14 +99,9 @@ pipeline {
         }
     }
     post {
-        // always {
-        //     script {
-        //         sh '''
-        //             docker-compose down || { echo "docker-compose down failed"; exit 1; }
-        //         '''
-        //     }
-        //     cleanWs()
-        // }
+        always {
+            cleanWs()
+        }
         success {
             echo 'Build Success!'
             echo 'Web-UI is running on http://webkidshop-frontend.s3.localhost.localstack.cloud:4566/index.html'
