@@ -15,6 +15,13 @@ resource "aws_s3_bucket" "frontend_bucket" {
   bucket = "webkidshop-frontend-bucket"
 }
 
+resource "aws_s3_bucket_public_access_block" "public" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  block_public_acls   = false
+  block_public_policy = false
+}
+
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   enable_dns_hostnames = true
