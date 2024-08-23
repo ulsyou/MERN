@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        LOCALSTACK_URL = 'http://localhost:4566'
+        LOCALSTACK_URL = 'http://webkidshop-frontend.s3.localhost.localstack.cloud:4566'
         TERRAFORM_DIR = 'terraform'
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
