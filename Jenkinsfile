@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         LOCALSTACK_URL = 'http://localhost:4566'
         TERRAFORM_DIR = 'terraform'
         FRONTEND_DIR = 'WebKidShop_FE'
@@ -33,12 +32,18 @@ pipeline {
             }
         }
 
+        stage('Start LocalStack') {
+            steps {
+                script {
+                    // Start LocalStack using Docker Compose
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 script {
-                    // Khởi động các services
-                    sh 'docker-compose up -d'
-
                     // Triển khai backend lên EC2 local sử dụng tflocal
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
@@ -60,7 +65,7 @@ pipeline {
     post {
         always {
             script {
-                // Dừng và xóa containers
+                // Dừng LocalStack
                 sh 'docker-compose down'
             }
             cleanWs()
