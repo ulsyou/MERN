@@ -68,6 +68,7 @@ pipeline {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
                         sh 'curl http://localhost:4566/_localstack/health'
+                        sh 'docker logs localstack'
                     }
                 }
             }
