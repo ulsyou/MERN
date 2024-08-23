@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webkidshop-frontend
+  namespace: webkidshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webkidshop-frontend
+  template:
+    metadata:
+      labels:
+        app: webkidshop-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: your-frontend-image:latest
+        ports:
+        - containerPort: 80

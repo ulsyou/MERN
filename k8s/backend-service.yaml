@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webkidshop-backend-service
+  namespace: webkidshop
+spec:
+  selector:
+    app: webkidshop-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer

@@ -19,7 +19,6 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 script {
-                    // MongoDB
                     sh '''
                     sudo apt-get update
                     wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo apt-key add -
@@ -30,17 +29,14 @@ pipeline {
                     sudo systemctl enable mongod
                     '''
 
-                    // NodeJS, NPM
                     sh '''
-                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                     sudo apt-get install -y nodejs
                     '''
 
-                    // Check NodeJS, NPM version
                     sh 'node -v'
                     sh 'npm -v'
 
-                    // Install ExpressJS, ReactJS, và Paypal API SDK
                     sh '''
                     npm install -g express@${EXPRESS_VERSION}
                     npm install -g create-react-app@${REACT_VERSION}
@@ -77,19 +73,15 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
+                // Build Docker images for Backend and Frontend
                 sh 'docker-compose build'
-            }
-        }
-
-        stage('Start LocalStack') {
-            steps {
-                sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
             }
         }
 
         stage('Deploy Backend to EC2 Local') {
             steps {
                 dir("${TERRAFORM_DIR}") {
+                    // Init Terraform and apply the configuration to deploy Backend to EC2 Local
                     sh 'tflocal init'
                     sh 'tflocal apply -auto-approve'
                 }
@@ -99,8 +91,10 @@ pipeline {
         stage('Deploy Frontend to S3 via LocalStack') {
             steps {
                 dir("${FRONTEND_DIR}") {
+                    // Build Frontend
                     sh 'npm run build'
 
+                    // Deploy Frontend to S3 using LocalStack
                     sh '''
                     aws --endpoint-url=${LOCALSTACK_URL} s3 sync ./build s3://your-bucket-name
                     '''
@@ -108,10 +102,14 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend to Kubernetes') {
+        stage('Deploy Backend and Frontend to Kubernetes') {
             steps {
                 dir("${KUBERNETES_CONFIG}") {
-                    sh 'kubectl apply -f .'
+                    // Apply Kubernetes config 
+                    sh 'kubectl apply -f backend-deployment.yaml'
+                    sh 'kubectl apply -f frontend-deployment.yaml'
+                    sh 'kubectl apply -f backend-service.yaml'
+                    sh 'kubectl apply -f frontend-service.yaml'
                 }
             }
         }
@@ -119,14 +117,13 @@ pipeline {
 
     post {
         always {
-            sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
-            cleanWs()
+            cleanWs() 
         }
         success {
-            echo 'Build và Deploy thành công!'
+            echo 'Build and Deploy success!'
         }
         failure {
-            echo 'Build hoặc Deploy bị lỗi.'
+            echo 'Build and Deploy failed!'
         }
     }
 }
