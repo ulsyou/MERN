@@ -16,7 +16,6 @@ resource "aws_s3_bucket" "frontend_bucket" {
 }
 
 resource "aws_instance" "backend_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"  
   instance_type = "t2.micro"
 
   tags = {
