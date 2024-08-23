@@ -99,14 +99,14 @@ pipeline {
         }
     }
     post {
-        always {
-            script {
-                sh '''
-                    docker-compose down || { echo "docker-compose down failed"; exit 1; }
-                '''
-            }
-            cleanWs()
-        }
+        // always {
+        //     script {
+        //         sh '''
+        //             docker-compose down || { echo "docker-compose down failed"; exit 1; }
+        //         '''
+        //     }
+        //     cleanWs()
+        // }
         success {
             echo 'Build Success!'
         }
