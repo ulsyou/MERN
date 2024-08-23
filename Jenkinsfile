@@ -79,7 +79,7 @@ pipeline {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
                     }
-
+        
                     // Triển khai frontend lên S3 (LocalStack)
                     dir("${FRONTEND_DIR}") {
                         sh """
@@ -87,13 +87,12 @@ pipeline {
                         aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
                         """
                     }
-
-                    // In ra URL truy cập trang web
-                    echo "Frontend URL: http://localhost:3000"
+        
+                    // In ra URL truy cập trang web (thay thế bằng IP công cộng của EC2)
+                    echo "Frontend URL: http://<ec2-public-ip>:80"
                 }
             }
         }
-    }
 
     post {
         always {
