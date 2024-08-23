@@ -19,18 +19,22 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 script {
-                    docker.image('node:18.15.0').inside {
+                    docker.image("node:${NODE_VERSION}").inside {
                         sh '''
-                        wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | apt-key add -
-                        echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+                        # Cài đặt MongoDB
+                        wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg
+                        echo "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
                         apt-get update
                         apt-get install -y mongodb-org
-                        systemctl start mongod
-                        systemctl enable mongod
 
+                        # Khởi chạy MongoDB foreground
+                        mongod --fork --logpath /var/log/mongod.log --dbpath /data/db
+
+                        # Kiểm tra phiên bản Node.js và npm
                         node -v
                         npm -v
 
+                        # Cài đặt các package NPM toàn cục nếu cần
                         npm install -g express@${EXPRESS_VERSION}
                         npm install -g create-react-app@${REACT_VERSION}
                         npm install -g paypal-rest-sdk@${PAYPAL_API_VERSION}
