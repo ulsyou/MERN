@@ -19,33 +19,40 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 script {
-                    docker.image("node:${NODE_VERSION}").inside {
-                        sh '''
-                        # Cài đặt MongoDB
-                        wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg
-                        echo "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
-                        apt-get update
-                        apt-get install -y mongodb-org
+                    // Cài đặt MongoDB
+                    sh '''
+                    sudo apt-get update
+                    wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo apt-key add -
+                    echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+                    sudo apt-get update
+                    sudo apt-get install -y mongodb-org
+                    sudo systemctl start mongod
+                    sudo systemctl enable mongod
+                    '''
 
-                        # Khởi chạy MongoDB foreground
-                        mongod --fork --logpath /var/log/mongod.log --dbpath /data/db
+                    // Cài đặt NodeJS và NPM
+                    sh '''
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                    sudo apt-get install -y nodejs
+                    '''
 
-                        # Kiểm tra phiên bản Node.js và npm
-                        node -v
-                        npm -v
+                    // Kiểm tra phiên bản NodeJS và NPM
+                    sh 'node -v'
+                    sh 'npm -v'
 
-                        # Cài đặt các package NPM toàn cục nếu cần
-                        npm install -g express@${EXPRESS_VERSION}
-                        npm install -g create-react-app@${REACT_VERSION}
-                        npm install -g paypal-rest-sdk@${PAYPAL_API_VERSION}
-                        '''
-                    }
+                    // Cài đặt ExpressJS, ReactJS, và Paypal API toàn cầu nếu cần thiết
+                    sh '''
+                    npm install -g express@${EXPRESS_VERSION}
+                    npm install -g create-react-app@${REACT_VERSION}
+                    npm install -g paypal-rest-sdk@${PAYPAL_API_VERSION}
+                    '''
                 }
             }
         }
 
         stage('Checkout') {
             steps {
+                // Lấy mã nguồn từ repository
                 checkout scm
             }
         }
@@ -71,6 +78,7 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
+                // Build Docker images cho Frontend và Backend
                 sh 'docker-compose build'
             }
         }
@@ -78,6 +86,7 @@ pipeline {
         stage('Deploy Backend to EC2 Local') {
             steps {
                 dir("${TERRAFORM_DIR}") {
+                    // Init Terraform và áp dụng cấu hình để triển khai trên EC2 Local bằng tflocal
                     sh 'tflocal init'
                     sh 'tflocal apply -auto-approve'
                 }
@@ -87,7 +96,10 @@ pipeline {
         stage('Deploy Frontend to S3 via LocalStack') {
             steps {
                 dir("${FRONTEND_DIR}") {
+                    // Build Frontend
                     sh 'npm run build'
+
+                    // Deploy Frontend lên S3 sử dụng LocalStack
                     sh '''
                     aws --endpoint-url=${LOCALSTACK_URL} s3 sync ./build s3://your-bucket-name
                     '''
@@ -98,6 +110,7 @@ pipeline {
         stage('Deploy Backend and Frontend to Kubernetes') {
             steps {
                 dir("${KUBERNETES_CONFIG}") {
+                    // Triển khai Backend và Frontend lên Kubernetes
                     sh 'kubectl apply -f backend-deployment.yaml'
                     sh 'kubectl apply -f frontend-deployment.yaml'
                     sh 'kubectl apply -f backend-service.yaml'
@@ -109,13 +122,13 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            cleanWs() // Làm sạch workspace sau khi hoàn thành
         }
         success {
-            echo 'Build and Deploy success!'
+            echo 'Build và Deploy thành công!'
         }
         failure {
-            echo 'Build and Deploy failed!'
+            echo 'Build hoặc Deploy bị lỗi.'
         }
     }
 }
