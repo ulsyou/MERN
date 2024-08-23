@@ -45,5 +45,3 @@ resource "aws_instance" "backend_instance" {
 
   user_data = file("${path.module}/user-data.sh")
 }
-
-}
