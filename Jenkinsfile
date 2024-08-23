@@ -20,28 +20,26 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-                    steps {
-                        sh '''
-                            if ! command -v pip &> /dev/null
-                            then
-                                apt-get update && apt-get install -y python3-pip
-                            fi
+            steps {
+                sh '''
+                    # Cập nhật danh sách gói và cài đặt các phụ thuộc
+                    apt-get update && apt-get install -y python3-pip unzip curl
 
-                            if ! command -v tflocal &> /dev/null
-                            then
-                                pip install terraform-local
-                            fi
+                    # Cài đặt terraform-local
+                    if ! command -v tflocal &> /dev/null; then
+                        pip install terraform-local
+                    fi
 
-                            if ! command -v aws &> /dev/null
-                            then
-                                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                                unzip -o awscliv2.zip
-                                ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
-                            fi
+                    # Cài đặt AWS CLI
+                    if ! command -v aws &> /dev/null; then
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                        unzip -o awscliv2.zip
+                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
+                    fi
 
-                            aws --version
-                        '''
-                    }
+                    aws --version
+                '''
+            }
         }
 
         stage('Build') {
@@ -64,8 +62,11 @@ pipeline {
         stage('Start LocalStack') {
             steps {
                 script {
-                    // Start LocalStack using Docker Compose
-                    sh 'docker-compose up -d'
+                    // Khởi động LocalStack bằng Docker Compose
+                    sh '''
+                        docker-compose up -d
+                        docker-compose ps
+                    '''
                 }
             }
         }
@@ -82,10 +83,13 @@ pipeline {
                     // Triển khai frontend lên S3 (LocalStack)
                     dir("${FRONTEND_DIR}") {
                         sh """
-                        aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend
+                        aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
                         aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
                         """
                     }
+
+                    // In ra URL truy cập trang web
+                    echo "Frontend URL: http://localhost:3000"
                 }
             }
         }
@@ -95,7 +99,9 @@ pipeline {
         always {
             script {
                 // Dừng LocalStack
-                sh 'docker-compose down'
+                sh '''
+                    docker-compose down || { echo "docker-compose down failed"; exit 1; }
+                '''
             }
             cleanWs()
         }
