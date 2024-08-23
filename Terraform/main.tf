@@ -35,12 +35,15 @@ resource "aws_instance" "backend_instance" {
     Name = "webkidshop-backend"
   }
   
-  user_data = <<-EOF
-              #!/bin/bash
-              cd /home/ubuntu
-              git clone https://github.com/ulsyou/MERN.git
-              cd MERN/WebKidShop_BE
-              npm install
-              npm start
-              EOF
+resource "aws_instance" "backend_instance" {
+  ami           = "ami-0c55b159cbfafe1f0"  
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "webkidshop-backend"
+  }
+
+  user_data = file("${path.module}/user-data.sh")
+}
+
 }
