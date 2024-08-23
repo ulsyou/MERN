@@ -19,28 +19,23 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 script {
-                    sh '''
-                    curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | apt-key add -
-                    echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
-                    apt-get update
-                    apt-get install -y mongodb-org
-                    systemctl start mongod
-                    systemctl enable mongod
-                    '''
+                    docker.image('node:18.15.0').inside {
+                        sh '''
+                        wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | apt-key add -
+                        echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+                        apt-get update
+                        apt-get install -y mongodb-org
+                        systemctl start mongod
+                        systemctl enable mongod
 
-                    sh '''
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-                    apt-get install -y nodejs
-                    '''
+                        node -v
+                        npm -v
 
-                    sh 'node -v'
-                    sh 'npm -v'
-
-                    sh '''
-                    npm install -g express@${EXPRESS_VERSION}
-                    npm install -g create-react-app@${REACT_VERSION}
-                    npm install -g paypal-rest-sdk@${PAYPAL_API_VERSION}
-                    '''
+                        npm install -g express@${EXPRESS_VERSION}
+                        npm install -g create-react-app@${REACT_VERSION}
+                        npm install -g paypal-rest-sdk@${PAYPAL_API_VERSION}
+                        '''
+                    }
                 }
             }
         }
