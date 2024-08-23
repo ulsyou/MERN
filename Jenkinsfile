@@ -20,16 +20,17 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    wget -qO - https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo apt-key add -
-                    echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
-                    sudo apt-get install -y mongodb-org
-                    sudo systemctl start mongod
-                    sudo systemctl enable mongod
+                    curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | apt-key add -
+                    echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_VERSION} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+                    apt-get update
+                    apt-get install -y mongodb-org
+                    systemctl start mongod
+                    systemctl enable mongod
                     '''
 
                     sh '''
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                    sudo apt-get install -y nodejs
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                    apt-get install -y nodejs
                     '''
 
                     sh 'node -v'
@@ -71,7 +72,6 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                // Build Docker images for Backend and Frontend
                 sh 'docker-compose build'
             }
         }
@@ -79,7 +79,6 @@ pipeline {
         stage('Deploy Backend to EC2 Local') {
             steps {
                 dir("${TERRAFORM_DIR}") {
-                    // Init Terraform and apply the configuration to deploy Backend to EC2 Local
                     sh 'tflocal init'
                     sh 'tflocal apply -auto-approve'
                 }
@@ -89,10 +88,7 @@ pipeline {
         stage('Deploy Frontend to S3 via LocalStack') {
             steps {
                 dir("${FRONTEND_DIR}") {
-                    // Build Frontend
                     sh 'npm run build'
-
-                    // Deploy Frontend to S3 using LocalStack
                     sh '''
                     aws --endpoint-url=${LOCALSTACK_URL} s3 sync ./build s3://your-bucket-name
                     '''
@@ -103,7 +99,6 @@ pipeline {
         stage('Deploy Backend and Frontend to Kubernetes') {
             steps {
                 dir("${KUBERNETES_CONFIG}") {
-                    // Apply Kubernetes config 
                     sh 'kubectl apply -f backend-deployment.yaml'
                     sh 'kubectl apply -f frontend-deployment.yaml'
                     sh 'kubectl apply -f backend-service.yaml'
@@ -115,7 +110,7 @@ pipeline {
 
     post {
         always {
-            cleanWs() 
+            cleanWs()
         }
         success {
             echo 'Build and Deploy success!'
