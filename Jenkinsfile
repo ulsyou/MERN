@@ -64,7 +64,7 @@ pipeline {
        stage('Deploy') {
             steps {
                 script {
-                    dir("${TERRAFORM_DIR}") {
+                    dir("${BACKEND_DIR}") {
                         sh 'tflocal init'
                         sh 'tflocal apply -auto-approve'
                     }
