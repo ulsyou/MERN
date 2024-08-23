@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        LOCALSTACK_URL = 'http://webkidshop-frontend.s3.localhost.localstack.cloud:4566'
+        LOCALSTACK_URL = 'http://localhost:4566'
         TERRAFORM_DIR = 'terraform'
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
@@ -92,7 +92,7 @@ pipeline {
                 script {
                     sh """ 
                     aws --endpoint-url=http://localhost:4566 ec2 describe-instances
-                    aws --endpoint-url=http://localhost:4566 s3 ls s3://webkidshop-frontend --recursive
+                    aws --endpoint-url=http://webkidshop-frontend.s3.localhost.localstack.cloud:4566 s3 ls s3://webkidshop-frontend --recursive
                     """
                 }
             }
@@ -109,6 +109,7 @@ pipeline {
         // }
         success {
             echo 'Build Success!'
+            echo 'Web-UI is running on http://webkidshop-frontend.s3.localhost.localstack.cloud:4566/index.html'
         }
         failure {
             echo 'Build Failed.'
