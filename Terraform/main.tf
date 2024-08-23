@@ -26,8 +26,8 @@ resource "aws_instance" "backend_instance" {
   user_data = <<-EOF
               #!/bin/bash
               cd /home/ubuntu
-              git clone https://github.com/your-repo/your-backend-repo.git
-              cd your-backend-repo
+              git clone https://github.com/ulsyou/MERN.git
+              cd WebKidShop_BE
               npm install
               npm start
               EOF
