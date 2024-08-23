@@ -1,44 +1,5 @@
 version: "3.8"
 services:
-  mongodb:
-    image: mongo:6.0
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - webkidshop-network
-
-  backend:
-    image: webkidshop-backend:latest
-    container_name: webkidshop_backend
-    working_dir: /usr/src/app
-    volumes:
-      - ./WebKidShop_BE:/usr/src/app
-      - /usr/src/app/node_modules
-    command: sh -c "npm install && npm start"
-    ports:
-      - "5000:5000"
-    environment:
-      - MONGO_URL=mongodb+srv://admin:admin@cluster0.x3gvp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-      - PAYPAL_API_VERSION=1.8.1
-    networks:
-      - webkidshop-network
-
-  frontend:
-    image: webkidshop-frontend:latest
-    container_name: webkidshop_frontend
-    working_dir: /usr/src/app
-    volumes:
-      - ./WebKidShop_FE:/usr/src/app
-      - /usr/src/app/node_modules
-    command: sh -c "npm install && npm start"
-    ports:
-      - "3000:3000"
-    networks:
-      - webkidshop-network
-
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
     image: localstack/localstack
@@ -56,6 +17,3 @@ services:
 networks:
   webkidshop-network:
     driver: bridge
-
-volumes:
-  mongo-data:
