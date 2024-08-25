@@ -27,12 +27,12 @@ data "aws_vpc" "default" {
 }
 
 data "aws_subnet" "default" {
-  vpc_id = data.aws_vpc.default.id
-  default_for_az = true
+  vpc_id            = data.aws_vpc.default.id
+  availability_zone = "us-east-1a"
 }
 
 resource "aws_instance" "backend_instance" {
-  ami           = "ami-12345678" 
+  ami           = "ami-12345678"  # Sử dụng một AMI ID giả
   instance_type = "t2.micro"
   subnet_id     = data.aws_subnet.default.id
   tags = {
