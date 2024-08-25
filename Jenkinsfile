@@ -82,30 +82,6 @@ pipeline {
         //         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
         //     }
         // }
-        
-        stage('Check LocalStack') {
-            steps {
-                script {
-                    def maxRetries = 20
-                    def retryInterval = 10 // seconds
-        
-                    for (int i = 0; i < maxRetries; i++) {
-                        def status = sh(script: "curl -s http://localhost:4566/_localstack/init/ready", returnStdout: true).trim()
-                        echo "LocalStack ready status: ${status}"
-                        
-                        if (status == "true") {
-                            echo "LocalStack is ready"
-                            return
-                        }
-                        
-                        echo "LocalStack not fully initialized, retrying in ${retryInterval} seconds..."
-                        sleep retryInterval
-                    }
-                    
-                    error "LocalStack failed to initialize after ${maxRetries * retryInterval} seconds"
-                }
-            }
-        }
 
         stage('Debug Terraform') {
             steps {
