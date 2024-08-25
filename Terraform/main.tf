@@ -6,8 +6,8 @@ provider "aws" {
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   endpoints {
-    s3  = "http://localhost:4566"
-    ec2 = "http://s3.localhost.localstack.cloud:4566"
+    ec2  = "http://localhost:4566"
+    s3 = "http://s3.localhost.localstack.cloud:4566"
   }
 }
 
@@ -22,30 +22,41 @@ resource "aws_s3_bucket_public_access_block" "public" {
   block_public_policy = false
 }
 
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+data "aws_vpc" "default" {
+  default = true
 }
 
-resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
+data "aws_subnet" "default" {
+  vpc_id = data.aws_vpc.default.id
+  default_for_az = true
 }
-  
+
 resource "aws_instance" "backend_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"  
+  ami           = "ami-12345678" 
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.main.id
+  subnet_id     = data.aws_subnet.default.id
   tags = {
     Name = "webkidshop-backend"
   }
   user_data = base64encode(file("${path.module}/user-data.sh"))
 }
+
 output "backend_instance_id" {
   value = aws_instance.backend_instance.id
 }
 
 output "backend_instance_private_ip" {
   value = aws_instance.backend_instance.private_ip
+}
+
+output "vpc_id" {
+  value = data.aws_vpc.default.id
+}
+
+output "subnet_id" {
+  value = data.aws_subnet.default.id
+}
+
+output "s3_bucket_id" {
+  value = aws_s3_bucket.frontend_bucket.id
 }
