@@ -42,11 +42,10 @@ resource "aws_instance" "backend_instance" {
   }
   user_data = base64encode(file("${path.module}/user-data.sh"))
 }
-
 output "backend_instance_id" {
-  value = aws_instance_backend.id
+  value = aws_instance.backend_instance.id
 }
 
 output "backend_instance_private_ip" {
-  value = aws_instance_backend.private_ip
+  value = aws_instance.backend_instance.private_ip
 }
