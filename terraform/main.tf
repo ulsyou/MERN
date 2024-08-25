@@ -11,6 +11,18 @@ provider "aws" {
   }
 }
 
+resource "aws_vpc" "default" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+}
+
+resource "aws_subnet" "default" {
+  vpc_id                  = aws_vpc.default.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+}
+
 resource "aws_s3_bucket" "frontend_bucket" {
   bucket = "webkidshop-frontend-bucket"
 }
@@ -27,13 +39,11 @@ data "aws_vpc" "default" {
 }
 
 data "aws_subnet" "default" {
-  vpc_id            = data.aws_vpc.default.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1"
+  id = aws_subnet.default.id
 }
 
 resource "aws_instance" "backend_instance" {
-  ami           = "ami-12345678"  # Sử dụng một AMI ID giả
+  ami           = "ami-12345678" 
   instance_type = "t2.micro"
   subnet_id     = data.aws_subnet.default.id
   tags = {
