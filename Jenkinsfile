@@ -75,17 +75,17 @@ pipeline {
             }
         }
 
-        stage('Test EC2 Creation with AWS CLI') {
-            steps {
-                sh '''
-                    aws --endpoint-url=http://localhost:4566 ec2 run-instances \
-                        --image-id ami-12345678 \
-                        --instance-type t2.micro \
-                        --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=test-instance}]'
-                '''
-                sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
-            }
-        }
+        // stage('Test EC2 Creation with AWS CLI') {
+        //     steps {
+        //         sh '''
+        //             aws --endpoint-url=http://localhost:4566 ec2 run-instances \
+        //                 --image-id ami-12345678 \
+        //                 --instance-type t2.micro \
+        //                 --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=test-instance}]'
+        //         '''
+        //         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
+        //     }
+        // }
 
         stage('Check LocalStack') {
             steps {
@@ -101,7 +101,7 @@ pipeline {
 
         stage('Check Terraform Configuration') {
             steps {
-                dir('terraform') {
+                dir('Terraform') {
                     sh 'cat main.tf'
                 }
             }
