@@ -24,7 +24,7 @@ pipeline {
                 sh '''
                     apt-get update && apt-get install -y > /dev/null 2>&1
                     if ! command -v tflocal &> /dev/null; then
-                        pip install terraform-local
+                        pip install terraform-local > /dev/null 2>&1
                     fi
                     if ! command -v aws &> /dev/null; then
                         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
