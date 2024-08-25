@@ -145,12 +145,12 @@ pipeline {
                         // Deploy backend code
                         dir("${BACKEND_DIR}") {
                             sh """
-                            scp -o StrictHostKeyChecking=no -r . ec2-user@${env.PRIVATE_IP}:/home/ec2-user/backend
-                            ssh -o StrictHostKeyChecking=no ec2-user@${env.PRIVATE_IP} '
-                                cd /home/ec2-user/backend
-                                npm install
-                                npm start &
-                            '
+                            aws --endpoint-url=${LOCALSTACK_URL} s3 sync . s3://temp-backend-bucket
+
+                            aws --endpoint-url=${LOCALSTACK_URL} ssm start-session \
+                                --target ${env.INSTANCE_ID} \
+                                --document-name AWS-StartInteractiveCommand \
+                                --parameters command="mkdir -p /home/ec2-user/backend && cd /home/ec2-user/backend && aws --endpoint-url=${LOCALSTACK_URL} s3 sync s3://temp-backend-bucket . && npm install && npm start &"
                             """
                         }
                     }
