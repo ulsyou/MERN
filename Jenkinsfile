@@ -22,14 +22,14 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    apt-get update && apt-get install -y > /dev/null 2>&1
+                    apt-get update && apt-get install -y
                     if ! command -v tflocal &> /dev/null; then
-                        pip install terraform-local > /dev/null 2>&1
+                        pip install terraform-local
                     fi
                     if ! command -v aws &> /dev/null; then
-                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
-                        unzip -o awscliv2.zip > /dev/null 2>&1
-                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update > /dev/null 2>&1
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                        unzip -o awscliv2.zip
+                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
                     fi
 
                     aws --version
@@ -41,11 +41,11 @@ pipeline {
             steps {
                 script {
                     dir("${BACKEND_DIR}") {
-                        sh 'npm install > /dev/null 2>&1'
+                        sh 'npm install'
                     }
                     dir("${FRONTEND_DIR}") {
-                        sh 'npm install --ignore-scripts > /dev/null 2>&1'
-                        sh 'npm run build > /dev/null 2>&1'
+                        sh 'npm install --ignore-scripts'
+                        sh 'npm run build'
                     }
                 }
             }
