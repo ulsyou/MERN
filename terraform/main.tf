@@ -56,6 +56,24 @@ output "backend_instance_id" {
   value = aws_instance.backend_instance.id
 }
 
+resource "aws_instance" "frontend_instance" {
+  ami           = "ami-12345678" 
+  instance_type = "t2.micro"
+  subnet_id     = data.aws_subnet.default.id
+  tags = {
+    Name = "webkidshop-frontend"
+  }
+  user_data = base64encode(file("${path.module}/frontend-user-data.sh"))
+}
+
+output "frontend_instance_id" {
+  value = aws_instance.frontend_instance.id
+}
+
+output "frontend_instance_private_ip" {
+  value = aws_instance.frontend_instance.private_ip
+}
+
 output "backend_instance_private_ip" {
   value = aws_instance.backend_instance.private_ip
 }
