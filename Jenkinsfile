@@ -61,16 +61,19 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy Backend') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
                         def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
+                        echo "Terraform Apply Output: ${tfOutput}"
                         
-                        def instanceId = sh(script: 'tflocal output -raw backend_instance_id', returnStdout: true).trim()
-                        def privateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                        sh 'tflocal show'
+                        
+                        def instanceId = sh(script: 'tflocal output -raw backend_instance_id || echo "No ID"', returnStdout: true).trim()
+                        def privateIp = sh(script: 'tflocal output -raw backend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
                         
                         env.INSTANCE_ID = instanceId
                         env.PRIVATE_IP = privateIp
