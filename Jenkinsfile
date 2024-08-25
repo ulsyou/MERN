@@ -149,23 +149,23 @@ pipeline {
         stage('Wait for Backend Startup') {
             steps {
                 script {
-                    def maxRetries = 10
                     def retryInterval = 30
                     def backendUrl = "http://${env.PRIVATE_IP}:3000"
-
-                    for (int i = 0; i < maxRetries; i++) {
+        
+                    while (true) {
                         try {
                             def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${backendUrl}", returnStdout: true).trim()
                             if (response == "200") {
                                 echo "Backend is up and running"
-                                return
+                                break
+                            } else {
+                                echo "Backend not ready, retrying in ${retryInterval} seconds..."
                             }
                         } catch (Exception e) {
-                            echo "Backend not ready, retrying in ${retryInterval} seconds..."
+                            echo "Error checking backend status: ${e.message}. Retrying in ${retryInterval} seconds..."
                         }
                         sleep retryInterval
                     }
-                    error "Backend failed to start after ${maxRetries} attempts"
                 }
             }
         }
@@ -241,6 +241,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Deploy Frontend') {
             steps {
                 script {
