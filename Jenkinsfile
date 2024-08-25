@@ -83,7 +83,11 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     
-                    echo "EC2 Instance IP: ${ec2InstanceIp}"
+                    if (ec2InstanceIp) {
+                        echo "EC2 Instance IP: ${ec2InstanceIp}"
+                    } else {
+                        error("No EC2 Instance IP found.")
+                    }
                 }
             }
         }
@@ -96,10 +100,14 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    def backendUrl = "http://${ec2InstanceIp}:3000"
-                    sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
-                    
-                    echo 'Backend is running'
+                    if (ec2InstanceIp) {
+                        def backendUrl = "http://${ec2InstanceIp}:3000"
+                        sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
+                        
+                        echo 'Backend is running'
+                    } else {
+                        error("Cannot check backend status. EC2 Instance IP is missing.")
+                    }
                 }
             }
         }
