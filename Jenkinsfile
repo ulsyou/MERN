@@ -10,7 +10,6 @@ pipeline {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
-        INSTANCE_ID = 'i-00914683ababcba7eb1' // Thay thế bằng Instance ID của bạn
     }
 
     stages {
@@ -63,7 +62,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend') {
+                stage('Deploy Backend') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
@@ -76,46 +75,77 @@ pipeline {
             }
         }
 
-        stage('Get EC2 Instance IPs') {
+        stage('Verify EC2 Instance') {
             steps {
                 script {
-                    def ec2Ips = sh(
+                    def instanceId = sh(
                         script: """
                             aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances \
-                            --filters "Name=instance-state-name,Values=running" \
-                            "Name=instance-id,Values=${INSTANCE_ID}" \
-                            --query 'Reservations[*].Instances[*].[PrivateIpAddress, PublicIpAddress]' \
+                            --filters "Name=tag:Name,Values=webkidshop-backend" \
+                            --query 'Reservations[*].Instances[*].[InstanceId]' \
                             --output text
                         """,
                         returnStdout: true
                     ).trim()
 
-                    def ips = ec2Ips.tokenize('\t')
-                    def privateIp = ips[0]
-                    def publicIp = ips.size() > 1 ? ips[1] : ""
-
-                    echo "Private IP: ${privateIp}"
-                    echo "Public IP: ${publicIp}"
-
-                    if (!publicIp) {
-                        error("No Public IP found for EC2 instance.")
+                    if (instanceId) {
+                        echo "EC2 instance created with ID: ${instanceId}"
+                        env.INSTANCE_ID = instanceId
+                    } else {
+                        error "Failed to create EC2 instance"
                     }
-
-                    env.PUBLIC_IP = publicIp
                 }
             }
         }
 
-        stage('Check Backend Status') {
+        stage('Get EC2 Instance IP') {
             steps {
                 script {
-                    def backendUrl = "http://${env.PUBLIC_IP}:3000"
-                    sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
-                    echo 'Backend is running'
+                    def ec2Ip = sh(
+                        script: """
+                            aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances \
+                            --instance-ids ${env.INSTANCE_ID} \
+                            --query 'Reservations[*].Instances[*].[PrivateIpAddress]' \
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    if (ec2Ip) {
+                        echo "EC2 instance IP: ${ec2Ip}"
+                        env.EC2_IP = ec2Ip
+                    } else {
+                        error "Failed to get EC2 instance IP"
+                    }
                 }
             }
         }
 
+        stage('Check Backend Deployment') {
+            steps {
+                script {
+                    def backendUrl = "http://${env.EC2_IP}:3000"
+                    def maxRetries = 5
+                    def retryInterval = 10
+
+                    for (int i = 0; i < maxRetries; i++) {
+                        def status = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${backendUrl}", returnStdout: true).trim()
+                        
+                        if (status == "200") {
+                            echo "Backend is running on EC2 instance"
+                            break
+                        } else {
+                            echo "Backend not responding, retrying in ${retryInterval} seconds..."
+                            sleep retryInterval
+                        }
+
+                        if (i == maxRetries - 1) {
+                            error "Backend deployment failed or not accessible"
+                        }
+                    }
+                }
+            }
+        }
         stage('Deploy Frontend') {
             steps {
                 script {
