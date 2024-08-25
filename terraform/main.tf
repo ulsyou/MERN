@@ -6,64 +6,93 @@ provider "aws" {
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   endpoints {
-    ec2  = "http://localhost:4566"
-    s3 = "http://s3.localhost.localstack.cloud:4566"
+    ec2 = "http://localhost:4566"
+    s3  = "http://s3.localhost.localstack.cloud:4566"
   }
 }
 
 resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support = true
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
   enable_dns_hostnames = true
 }
 
 resource "aws_subnet" "default" {
-  vpc_id                  = aws_vpc.default.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"
+  vpc_id            = aws_vpc.default.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
 }
 
-resource "aws_s3_bucket" "frontend_bucket" {
-  bucket = "webkidshop-frontend-bucket"
-}
+resource "aws_security_group" "allow_web" {
+  name        = "allow_web_traffic"
+  description = "Allow inbound web traffic"
+  vpc_id      = aws_vpc.default.id
 
-resource "aws_s3_bucket_public_access_block" "public" {
-  bucket = aws_s3_bucket.frontend_bucket.id
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-  block_public_acls   = false
-  block_public_policy = false
-}
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnet" "default" {
-  id = aws_subnet.default.id
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_instance" "backend_instance" {
-  ami           = "ami-12345678" 
-  instance_type = "t2.micro"
-  subnet_id     = data.aws_subnet.default.id
+  ami                    = "ami-12345678"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.default.id
+  vpc_security_group_ids = [aws_security_group.allow_web.id]
   tags = {
     Name = "webkidshop-backend"
   }
   user_data = base64encode(file("${path.module}/user-data.sh"))
 }
 
+resource "aws_instance" "frontend_instance" {
+  ami                    = "ami-12345678"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.default.id
+  vpc_security_group_ids = [aws_security_group.allow_web.id]
+  tags = {
+    Name = "webkidshop-frontend"
+  }
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y python3
+              EOF
+  )
+}
+
+resource "aws_s3_bucket" "temp_frontend_bucket" {
+  bucket = "temp-frontend-bucket"
+}
+
+resource "aws_s3_bucket" "temp_backend_bucket" {
+  bucket = "temp-backend-bucket"
+}
+
 output "backend_instance_id" {
   value = aws_instance.backend_instance.id
 }
 
-resource "aws_instance" "frontend_instance" {
-  ami           = "ami-12345678" 
-  instance_type = "t2.micro"
-  subnet_id     = data.aws_subnet.default.id
-  tags = {
-    Name = "webkidshop-frontend"
-  }
-  user_data = base64encode(file("${path.module}/frontend-user-data.sh"))
+output "backend_instance_private_ip" {
+  value = aws_instance.backend_instance.private_ip
 }
 
 output "frontend_instance_id" {
@@ -74,18 +103,10 @@ output "frontend_instance_private_ip" {
   value = aws_instance.frontend_instance.private_ip
 }
 
-output "backend_instance_private_ip" {
-  value = aws_instance.backend_instance.private_ip
-}
-
 output "vpc_id" {
-  value = data.aws_vpc.default.id
+  value = aws_vpc.default.id
 }
 
 output "subnet_id" {
-  value = data.aws_subnet.default.id
-}
-
-output "s3_bucket_id" {
-  value = aws_s3_bucket.frontend_bucket.id
+  value = aws_subnet.default.id
 }
