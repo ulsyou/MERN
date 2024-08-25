@@ -79,8 +79,8 @@ pipeline {
                 script {
                     dir("${FRONTEND_DIR}") {
                         sh """
-                        aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
-                        aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
+                        awslocal --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
+                        awslocal --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
                         """
                     }
                     echo "Frontend deployed successfully"
@@ -91,8 +91,8 @@ pipeline {
             steps {
                 script {
                     sh """ 
-                    aws --endpoint-url=http://localhost:4566 ec2 describe-instances
-                    aws --endpoint-url=http://webkidshop-frontend.s3.localhost.localstack.cloud:4566 s3 ls s3://webkidshop-frontend --recursive
+                    awslocal --endpoint-url=http://localhost:4566 ec2 describe-instances
+                    awslocal --endpoint-url=http://webkidshop-frontend.s3.localhost.localstack.cloud:4566 s3 ls s3://webkidshop-frontend --recursive
                     """
                 }
             }
