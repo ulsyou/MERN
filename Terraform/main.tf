@@ -36,10 +36,17 @@ resource "aws_subnet" "main" {
 resource "aws_instance" "backend_instance" {
   ami           = "ami-0c55b159cbfafe1f0"  
   instance_type = "t2.micro"
-
+  subnet_id     = aws_subnet.main.id
   tags = {
     Name = "webkidshop-backend"
   }
+  user_data = base64encode(file("${path.module}/user-data.sh"))
+}
 
-  user_data = file("${path.module}/user-data.sh")
+output "backend_instance_id" {
+  value = aws_instance_backend.id
+}
+
+output "backend_instance_private_ip" {
+  value = aws_instance_backend.private_ip
 }
