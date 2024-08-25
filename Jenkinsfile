@@ -37,6 +37,21 @@ pipeline {
             }
         }
 
+         stage('Check Directory') {
+            steps {
+                script {
+                    sh '''
+                        if [ -d "/home/ubuntu" ]; then
+                            echo "/home/ubuntu exists"
+                        else
+                            echo "/home/ubuntu does not exist"
+                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 script {
