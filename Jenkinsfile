@@ -37,18 +37,16 @@ pipeline {
             }
         }
 
-         stage('Check Directory') {
+        stage('Print Working Directory') {
             steps {
-                script {
-                    sh '''
-                        if [ -d "/home/ubuntu" ]; then
-                            echo "/home/ubuntu exists"
-                        else
-                            echo "/home/ubuntu does not exist"
-                            exit 1
-                        fi
-                    '''
-                }
+                sh 'pwd'
+            }
+        }
+
+        stage('List Directories') {
+            steps {
+                sh 'ls -l /home'
+                sh 'ls -l /'
             }
         }
 
