@@ -138,17 +138,13 @@ pipeline {
                         
                         echo "EC2 Instance ID: ${env.INSTANCE_ID}"
                         echo "EC2 Private IP: ${env.PRIVATE_IP}"
-        
+
                         sh "aws --endpoint-url=${LOCALSTACK_URL} ec2 wait instance-status-ok --instance-ids ${env.INSTANCE_ID}"
-        
+
                         dir("${BACKEND_DIR}") {
                             sh """
-                            aws --endpoint-url=${LOCALSTACK_URL} s3 sync . s3://temp-backend-bucket
-
-                            aws --endpoint-url=${LOCALSTACK_URL} ssm start-session \
-                                --target ${env.INSTANCE_ID} \
-                                --document-name AWS-StartInteractiveCommand \
-                                --parameters command="mkdir -p /home/ec2-user/backend && cd /home/ec2-user/backend && aws --endpoint-url=${LOCALSTACK_URL} s3 sync s3://temp-backend-bucket . && npm install && npm start &"
+                            scp -i ${KEY_FILE} -o StrictHostKeyChecking=no -r . ec2-user@${env.PRIVATE_IP}:/home/ec2-user/backend
+                            ssh -i ${KEY_FILE} -o StrictHostKeyChecking=no ec2-user@${env.PRIVATE_IP} 'cd /home/ec2-user/backend && npm install && npm start'
                             """
                         }
                     }
@@ -186,7 +182,7 @@ pipeline {
         }
         success {
             echo 'Build Success!'
-            echo 'Web-UI is running on http://webkidshop-frontend.s3.localhost.localstack.cloud:4566/index.html'
+            echo 'Web-UI is running on http://webkidshop-frontend.s3.localhost.localstack.cloud:4566'
         }
         failure {
             echo 'Build Failed.'
