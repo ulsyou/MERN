@@ -61,7 +61,8 @@ pipeline {
                 }
             }
         }
-       stage('Deploy Backend') {
+
+        stage('Deploy Backend') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
@@ -70,6 +71,35 @@ pipeline {
                         sh 'curl http://localhost:4566/_localstack/health'
                         sh 'docker-compose logs localstack'
                     }
+                }
+            }
+        }
+
+        stage('Get EC2 Instance IP') {
+            steps {
+                script {
+                    def ec2InstanceIp = sh(
+                        script: "aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text",
+                        returnStdout: true
+                    ).trim()
+                    
+                    echo "EC2 Instance IP: ${ec2InstanceIp}"
+                }
+            }
+        }
+
+        stage('Check Backend Status') {
+            steps {
+                script {
+                    def ec2InstanceIp = sh(
+                        script: "aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text",
+                        returnStdout: true
+                    ).trim()
+
+                    def backendUrl = "http://${ec2InstanceIp}:3000"
+                    sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
+                    
+                    echo 'Backend is running'
                 }
             }
         }
@@ -87,17 +117,8 @@ pipeline {
                 }
             }
         }
-        stage ('Check file upload'){
-            steps {
-                script {
-                    sh """ 
-                    aws --endpoint-url=http://localhost:4566 ec2 describe-instances
-                    aws --endpoint-url=http://webkidshop-frontend.s3.localhost.localstack.cloud:4566 s3 ls s3://webkidshop-frontend --recursive
-                    """
-                }
-            }
-        }
     }
+
     post {
         always {
             cleanWs()
