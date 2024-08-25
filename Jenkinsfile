@@ -91,8 +91,8 @@ pipeline {
                 script {
                     dir("${TERRAFORM_DIR}") {
                         sh 'cat main.tf'
-                        sh 'tflocal refresh'
                         sh 'tflocal init'
+                        sh 'tflocal refresh'
                         sh 'tflocal plan -out=tfplan'
                         sh 'tflocal show tfplan'
                         def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
