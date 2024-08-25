@@ -73,6 +73,38 @@ pipeline {
                 }
             }
         }
+
+        stage('Debug Terraform') {
+            steps {
+                script {
+                    dir("${TERRAFORM_DIR}") {
+                        sh 'tflocal init'
+                        sh 'tflocal plan -out=tfplan'
+                        sh 'tflocal show tfplan'
+                        def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
+                        echo "Terraform Apply Output: ${tfOutput}"
+                        
+                        sh 'tflocal show'
+                        sh 'tflocal state list'
+                        
+                        def vpcId = sh(script: 'tflocal output vpc_id || echo "No VPC ID"', returnStdout: true).trim()
+                        def subnetId = sh(script: 'tflocal output subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
+                        def s3BucketId = sh(script: 'tflocal output s3_bucket_id || echo "No S3 Bucket ID"', returnStdout: true).trim()
+                        def instanceId = sh(script: 'tflocal output backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
+                        def privateIp = sh(script: 'tflocal output backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
+                        
+                        echo "VPC ID: ${vpcId}"
+                        echo "Subnet ID: ${subnetId}"
+                        echo "S3 Bucket ID: ${s3BucketId}"
+                        echo "EC2 Instance ID: ${instanceId}"
+                        echo "EC2 Private IP: ${privateIp}"
+                        
+                        sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
+                        sh 'aws --endpoint-url=http://localhost:4566 s3api list-buckets'
+                    }
+                }
+            }
+        }
         
         stage('Deploy Backend') {
             steps {
