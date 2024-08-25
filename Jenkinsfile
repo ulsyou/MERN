@@ -49,11 +49,11 @@ pipeline {
             steps {
                 script {
                     dir("${BACKEND_DIR}") {
-                        sh 'npm install'
+                        sh 'npm install > /dev/null 2>&1'
                     }
                     dir("${FRONTEND_DIR}") {
-                        sh 'npm install --ignore-scripts'
-                        sh 'npm run build'
+                        sh 'npm install --ignore-scripts > /dev/null 2>&1'
+                        sh 'npm run build > /dev/null 2>&1'
                     }
                 }
             }
