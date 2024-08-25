@@ -43,13 +43,6 @@ pipeline {
             }
         }
 
-        stage('List Directories') {
-            steps {
-                sh 'ls -l /home'
-                sh 'ls -l /'
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
@@ -99,18 +92,11 @@ pipeline {
             }
         }
 
-        stage('Check Terraform Configuration') {
-            steps {
-                dir('Terraform') {
-                    sh 'cat main.tf'
-                }
-            }
-        }
-
         stage('Debug Terraform') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
+                        sh 'cat main.tf'
                         sh 'tflocal init'
                         sh 'tflocal plan -out=tfplan'
                         sh 'tflocal show tfplan'
