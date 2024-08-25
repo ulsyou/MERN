@@ -28,6 +28,7 @@ data "aws_vpc" "default" {
 
 data "aws_subnet" "default" {
   vpc_id            = data.aws_vpc.default.id
+  cidr_block        = "10.0.1.0/24"
   availability_zone = "us-east-1"
 }
 
