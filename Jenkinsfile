@@ -55,6 +55,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        docker-compose down
                         docker-compose up -d
                         docker-compose ps
                     '''
