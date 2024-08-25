@@ -34,6 +34,7 @@ pipeline {
 
                     aws --version
                 '''
+                sh ''' pip install awscli-local '''
             }
         }
 
