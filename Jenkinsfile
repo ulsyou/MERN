@@ -105,13 +105,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Check Versions') {
-            steps {
-                sh 'tflocal version'
-                sh 'docker-compose inspect localstack | grep "Image"'
-            }
-        }
         
         stage('Deploy Backend') {
             steps {
