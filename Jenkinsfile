@@ -24,19 +24,19 @@ pipeline {
                 sh '''
                     if ! command -v pip &> /dev/null
                     then
-                        apt-get update && apt-get install -y python3-pip
+                        apt-get update && apt-get install -y python3-pip > /dev/null 2>&1
                     fi
 
                     if ! command -v tflocal &> /dev/null
                     then
-                        pip install terraform-local
+                        pip install terraform-local > /dev/null 2>&1
                     fi
 
                     if ! command -v aws &> /dev/null
                     then
-                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                        unzip -o awscliv2.zip
-                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
+                        unzip -o awscliv2.zip > /dev/null 2>&1
+                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update > /dev/null 2>&1
                     fi
 
                     aws --version
