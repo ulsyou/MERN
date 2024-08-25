@@ -1,7 +1,7 @@
 provider "aws" {
   access_key                  = "test"
   secret_key                  = "test"
-  region                      = "us-east-1a"
+  region                      = "us-east-1"
   s3_use_path_style           = true
   skip_credentials_validation = true
   skip_metadata_api_check     = true
@@ -28,7 +28,7 @@ data "aws_vpc" "default" {
 
 data "aws_subnet" "default" {
   vpc_id            = data.aws_vpc.default.id
-  availability_zone = "us-east-1a"
+  availability_zone = "us-east-1"
 }
 
 resource "aws_instance" "backend_instance" {
