@@ -10,6 +10,8 @@ pipeline {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
+        KEY_NAME = 'my-key'
+        KEY_FILE = 'key.pem'
     }
 
     stages {
@@ -43,7 +45,21 @@ pipeline {
                 '''
             }
         }
-    
+        
+        stage('Create or Use Key Pair') {
+            steps {
+                script {
+                    if (!fileExists(KEY_FILE)) {
+                        sh """
+                        awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
+                        chmod 400 ${KEY_FILE}
+                        """
+                    } else {
+                        echo "Key pair already exists."
+                    }
+                }
+            }
+        }
 
         stage('Build') {
             steps {
@@ -71,18 +87,6 @@ pipeline {
             }
         }
 
-        // stage('Test EC2 Creation with AWS CLI') {
-        //     steps {
-        //         sh '''
-        //             aws --endpoint-url=http://localhost:4566 ec2 run-instances \
-        //                 --image-id ami-12345678 \
-        //                 --instance-type t2.micro \
-        //                 --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=test-instance}]'
-        //         '''
-        //         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
-        //     }
-        // }
-
         stage('Debug Terraform') {
             steps {
                 script {
@@ -98,15 +102,11 @@ pipeline {
                         sh 'tflocal show'
                         sh 'tflocal state list'
                         
-                        def vpcId = sh(script: 'tflocal output vpc_id || echo "No VPC ID"', returnStdout: true).trim()
                         def subnetId = sh(script: 'tflocal output subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
-                        def s3BucketId = sh(script: 'tflocal output s3_bucket_id || echo "No S3 Bucket ID"', returnStdout: true).trim()
                         def instanceId = sh(script: 'tflocal output backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
                         def privateIp = sh(script: 'tflocal output backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
                         
-                        echo "VPC ID: ${vpcId}"
                         echo "Subnet ID: ${subnetId}"
-                        echo "S3 Bucket ID: ${s3BucketId}"
                         echo "EC2 Instance ID: ${instanceId}"
                         echo "EC2 Private IP: ${privateIp}"
                         
@@ -139,10 +139,8 @@ pipeline {
                         echo "EC2 Instance ID: ${env.INSTANCE_ID}"
                         echo "EC2 Private IP: ${env.PRIVATE_IP}"
         
-                        // Wait for the instance to be ready
                         sh "aws --endpoint-url=${LOCALSTACK_URL} ec2 wait instance-status-ok --instance-ids ${env.INSTANCE_ID}"
         
-                        // Deploy backend code
                         dir("${BACKEND_DIR}") {
                             sh """
                             aws --endpoint-url=${LOCALSTACK_URL} s3 sync . s3://temp-backend-bucket
@@ -162,14 +160,11 @@ pipeline {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
-                        // Build the frontend
                         sh 'npm run build'
         
-                        // Get the frontend instance details
                         def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
                         def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
         
-                        // Use AWS CLI (configured for LocalStack) to copy files to the instance
                         sh """
                         aws --endpoint-url=${LOCALSTACK_URL} s3 sync build s3://temp-frontend-bucket
 
