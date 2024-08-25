@@ -22,14 +22,14 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    apt-get update && apt-get install -y 
+                    apt-get update && apt-get install -y > /dev/null 2>&1
                     if ! command -v tflocal &> /dev/null; then
                         pip install terraform-local
                     fi
                     if ! command -v aws &> /dev/null; then
-                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                        unzip -o awscliv2.zip
-                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
+                        unzip -o awscliv2.zip > /dev/null 2>&1
+                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update > /dev/null 2>&1
                     fi
 
                     aws --version
