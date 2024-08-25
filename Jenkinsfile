@@ -61,16 +61,31 @@ pipeline {
                 }
             }
         }
+
+        stage('Check LocalStack') {
+            steps {
+                script {
+                    def health = sh(script: "curl -s http://localhost:4566/_localstack/health", returnStdout: true)
+                    echo "LocalStack health: ${health}"
+                    if (!health.contains('"ec2": "running"')) {
+                        error "EC2 service is not running in LocalStack"
+                    }
+                }
+            }
+        }
         
         stage('Deploy Backend') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
+                        sh 'tflocal plan -out=tfplan'
+                        sh 'tflocal show tfplan'
                         def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
                         echo "Terraform Apply Output: ${tfOutput}"
                         
                         sh 'tflocal show'
+                        sh 'tflocal state list'
                         
                         def instanceId = sh(script: 'tflocal output -raw backend_instance_id || echo "No ID"', returnStdout: true).trim()
                         def privateIp = sh(script: 'tflocal output -raw backend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
