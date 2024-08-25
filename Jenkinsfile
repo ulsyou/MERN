@@ -109,7 +109,7 @@ pipeline {
         stage('Check Versions') {
             steps {
                 sh 'tflocal version'
-                sh 'docker inspect localstack | grep "Image"'
+                sh 'docker-compose inspect localstack | grep "Image"'
             }
         }
         
