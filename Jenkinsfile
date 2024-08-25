@@ -37,12 +37,6 @@ pipeline {
             }
         }
 
-        stage('Print Working Directory') {
-            steps {
-                sh 'pwd'
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
