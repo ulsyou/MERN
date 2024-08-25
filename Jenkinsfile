@@ -10,6 +10,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
+        INSTANCE_ID = 'i-00914683ababcba7eb1' // Thay thế bằng Instance ID của bạn
     }
 
     stages {
@@ -75,19 +76,32 @@ pipeline {
             }
         }
 
-        stage('Get EC2 Instance IP') {
+        stage('Get EC2 Instance IPs') {
             steps {
                 script {
-                    def ec2InstanceIp = sh(
-                        script: "aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text",
+                    def ec2Ips = sh(
+                        script: """
+                            aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances \
+                            --filters "Name=instance-state-name,Values=running" \
+                            "Name=instance-id,Values=${INSTANCE_ID}" \
+                            --query 'Reservations[*].Instances[*].[PrivateIpAddress, PublicIpAddress]' \
+                            --output text
+                        """,
                         returnStdout: true
                     ).trim()
-                    
-                    if (ec2InstanceIp) {
-                        echo "EC2 Instance IP: ${ec2InstanceIp}"
-                    } else {
-                        error("No EC2 Instance IP found.")
+
+                    def ips = ec2Ips.tokenize('\t')
+                    def privateIp = ips[0]
+                    def publicIp = ips.size() > 1 ? ips[1] : ""
+
+                    echo "Private IP: ${privateIp}"
+                    echo "Public IP: ${publicIp}"
+
+                    if (!publicIp) {
+                        error("No Public IP found for EC2 instance.")
                     }
+
+                    env.PUBLIC_IP = publicIp
                 }
             }
         }
@@ -95,19 +109,9 @@ pipeline {
         stage('Check Backend Status') {
             steps {
                 script {
-                    def ec2InstanceIp = sh(
-                        script: "aws --endpoint-url=${LOCALSTACK_URL} ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text",
-                        returnStdout: true
-                    ).trim()
-
-                    if (ec2InstanceIp) {
-                        def backendUrl = "http://${ec2InstanceIp}:3000"
-                        sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
-                        
-                        echo 'Backend is running'
-                    } else {
-                        error("Cannot check backend status. EC2 Instance IP is missing.")
-                    }
+                    def backendUrl = "http://${env.PUBLIC_IP}:3000"
+                    sh "curl --retry 5 --retry-delay 10 --retry-connrefused --fail ${backendUrl} || exit 1"
+                    echo 'Backend is running'
                 }
             }
         }
