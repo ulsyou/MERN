@@ -162,23 +162,40 @@ pipeline {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
+                        // Build the frontend
                         sh 'npm run build'
         
+                        // Get the frontend instance details
                         def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
                         def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
         
+                        // Use AWS CLI (configured for LocalStack) to copy files to the instance
                         sh """
-                        scp -o StrictHostKeyChecking=no -r build ec2-user@${frontendPrivateIp}:/home/ec2-user/frontend
-                        """
+                        aws --endpoint-url=${LOCALSTACK_URL} ec2-instance-connect send-ssh-public-key \
+                            --instance-id ${frontendInstanceId} \
+                            --availability-zone us-east-1a \
+                            --instance-os-user ec2-user \
+                            --ssh-public-key file://~/.ssh/id_rsa.pub
         
-                        sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@${frontendPrivateIp} '
-                            cd /home/ec2-user/frontend
-                            nohup python3 -m http.server 80 &
-                        '
+                        aws --endpoint-url=${LOCALSTACK_URL} ssm start-session \
+                            --target ${frontendInstanceId} \
+                            --document-name AWS-StartInteractiveCommand \
+                            --parameters command="mkdir -p /home/ec2-user/frontend && cd /home/ec2-user/frontend && rm -rf * && echo 'Frontend placeholder' > index.html"
+                        
+                        aws --endpoint-url=${LOCALSTACK_URL} s3 sync build s3://temp-frontend-bucket
+        
+                        aws --endpoint-url=${LOCALSTACK_URL} ssm start-session \
+                            --target ${frontendInstanceId} \
+                            --document-name AWS-StartInteractiveCommand \
+                            --parameters command="aws --endpoint-url=${LOCALSTACK_URL} s3 sync s3://temp-frontend-bucket /home/ec2-user/frontend"
+        
+                        aws --endpoint-url=${LOCALSTACK_URL} ssm start-session \
+                            --target ${frontendInstanceId} \
+                            --document-name AWS-StartInteractiveCommand \
+                            --parameters command="cd /home/ec2-user/frontend && python3 -m http.server 80 &"
                         """
                     }
-                    echo "Frontend deployed successfully to EC2"
+                    echo "Frontend deployed successfully to EC2 local"
                 }
             }
         }
