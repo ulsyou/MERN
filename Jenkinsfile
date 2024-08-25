@@ -62,15 +62,46 @@ pipeline {
             }
         }
 
-                stage('Deploy Backend') {
+        stage('Deploy Backend') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
-                        sh 'tflocal apply -auto-approve'
-                        sh 'curl http://localhost:4566/_localstack/health'
-                        sh 'docker-compose logs localstack'
+                        def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
+                        
+                        def instanceId = sh(script: 'tflocal output -raw backend_instance_id', returnStdout: true).trim()
+                        def privateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                        
+                        env.INSTANCE_ID = instanceId
+                        env.PRIVATE_IP = privateIp
+                        
+                        echo "EC2 Instance ID: ${env.INSTANCE_ID}"
+                        echo "EC2 Private IP: ${env.PRIVATE_IP}"
                     }
+                }
+            }
+        }
+
+        stage('Wait for Backend Startup') {
+            steps {
+                script {
+                    def maxRetries = 10
+                    def retryInterval = 30
+                    def backendUrl = "http://${env.PRIVATE_IP}:3000"
+
+                    for (int i = 0; i < maxRetries; i++) {
+                        try {
+                            def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${backendUrl}", returnStdout: true).trim()
+                            if (response == "200") {
+                                echo "Backend is up and running"
+                                return
+                            }
+                        } catch (Exception e) {
+                            echo "Backend not ready, retrying in ${retryInterval} seconds..."
+                        }
+                        sleep retryInterval
+                    }
+                    error "Backend failed to start after ${maxRetries} attempts"
                 }
             }
         }
