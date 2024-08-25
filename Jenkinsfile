@@ -138,6 +138,21 @@ pipeline {
                         
                         echo "EC2 Instance ID: ${env.INSTANCE_ID}"
                         echo "EC2 Private IP: ${env.PRIVATE_IP}"
+        
+                        // Wait for the instance to be ready
+                        sh "aws --endpoint-url=${LOCALSTACK_URL} ec2 wait instance-status-ok --instance-ids ${env.INSTANCE_ID}"
+        
+                        // Deploy backend code
+                        dir("${BACKEND_DIR}") {
+                            sh """
+                            scp -o StrictHostKeyChecking=no -r . ec2-user@${env.PRIVATE_IP}:/home/ec2-user/backend
+                            ssh -o StrictHostKeyChecking=no ec2-user@${env.PRIVATE_IP} '
+                                cd /home/ec2-user/backend
+                                npm install
+                                npm start &
+                            '
+                            """
+                        }
                     }
                 }
             }
@@ -147,12 +162,23 @@ pipeline {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
+                        sh 'npm run build'
+        
+                        def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
+                        def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
+        
                         sh """
-                        aws --endpoint-url=${LOCALSTACK_URL} s3 mb s3://webkidshop-frontend || true
-                        aws --endpoint-url=${LOCALSTACK_URL} s3 sync build/ s3://webkidshop-frontend
+                        scp -o StrictHostKeyChecking=no -r build ec2-user@${frontendPrivateIp}:/home/ec2-user/frontend
+                        """
+        
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@${frontendPrivateIp} '
+                            cd /home/ec2-user/frontend
+                            nohup python3 -m http.server 80 &
+                        '
                         """
                     }
-                    echo "Frontend deployed successfully"
+                    echo "Frontend deployed successfully to EC2"
                 }
             }
         }
