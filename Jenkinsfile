@@ -145,6 +145,25 @@ pipeline {
             }
         }
 
+        stage('Verify Deployment on EC2') {
+            steps {
+                script {
+                    def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
+
+                    echo "Checking Backend Deployment on EC2..."
+                    sh """
+                    ssh -i ${KEY_FILE} kali@${backendPrivateIp} "ls -la /home/kali/${BACKEND_DIR}"
+                    """
+
+                    echo "Checking Frontend Deployment on EC2..."
+                    sh """
+                    ssh -i ${KEY_FILE} kali@${frontendPrivateIp} "ls -la /home/kali/${FRONTEND_DIR}"
+                    """
+                }
+            }
+        }
+
         stage('Check Health service') {
             steps {
                 script {
