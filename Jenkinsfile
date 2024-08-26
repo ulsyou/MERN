@@ -120,7 +120,7 @@ pipeline {
         stage('Deploy Backend') {
             steps {
                 script {
-                    dir("${BACKEND_DIR}") {
+                    dir("${TERRAFORM_DIR}") {
                         sh 'npm install > /dev/null 2>&1'
                         def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
                         echo "Backend is running on http://${backendPrivateIp}:3000"
@@ -132,7 +132,7 @@ pipeline {
         stage('Deploy Frontend') {
             steps {
                 script {
-                    dir("${FRONTEND_DIR}") {
+                    dir("${TERRAFORM_DIR}") {
                         sh 'npm install --ignore-scripts > /dev/null 2>&1'
                         sh 'npm run build > /dev/null 2>&1'
                         def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
