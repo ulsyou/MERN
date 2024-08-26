@@ -134,6 +134,15 @@ pipeline {
         }
     }
 
+    stage('Get Frontend URL') {
+        steps {
+            script {
+                def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
+                echo "Frontend is deployed on http://${frontendPrivateIp}:80"
+            }
+        }
+    }
+
     post {
         success {
             script {
