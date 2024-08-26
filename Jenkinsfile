@@ -6,7 +6,7 @@ pipeline {
         TERRAFORM_DIR = 'terraform'
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
-        PATH = "$HOME/.local/bin:$PATH"
+        PATH = "$HOME/.local/bin:$PATH" 
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
@@ -20,7 +20,7 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -75,13 +75,11 @@ pipeline {
                         
                         def subnetId = sh(script: 'tflocal output subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
                         def instanceId = sh(script: 'tflocal output backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
-                        def backendPrivateIp = sh(script: 'tflocal output backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
-                        def frontendPrivateIp = sh(script: 'tflocal output frontend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
+                        def privateIp = sh(script: 'tflocal output backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
                         
                         echo "Subnet ID: ${subnetId}"
-                        echo "Backend EC2 Instance ID: ${instanceId}"
-                        echo "Backend EC2 Private IP: ${backendPrivateIp}"
-                        echo "Frontend EC2 Private IP: ${frontendPrivateIp}"
+                        echo "EC2 Instance ID: ${instanceId}"
+                        echo "EC2 Private IP: ${privateIp}"
                         
                         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
                         sh 'aws --endpoint-url=http://localhost:4566 s3api list-buckets'
@@ -108,30 +106,21 @@ pipeline {
             }
         }
 
-        stage('Build and Deploy Backend') {
+        stage('Verify Deployment on EC2') {
             steps {
                 script {
-                    dir("${BACKEND_DIR}") {
-                        sh 'pwd'
-                        sh 'npm install > /dev/null 2>&1'
-                        sh 'npm run build > /dev/null 2>&1'
-                        def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
-                        echo "Backend is running on http://${backendPrivateIp}:3000"
-                    }
-                }
-            }
-        }
+                    def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
 
-        stage('Build and Deploy Frontend') {
-            steps {
-                script {
-                    dir("${FRONTEND_DIR}") {
-                        sh 'pwd'
-                        sh 'npm install --ignore-scripts > /dev/null 2>&1'
-                        sh 'npm run build > /dev/null 2>&1'
-                        def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
-                        echo "Frontend deployed successfully on IP ${frontendPrivateIp}, is running on http://${frontendPrivateIp}:80"
-                    }
+                    echo "Checking Backend Deployment on EC2..."
+                    sh """
+                    ssh -i ${KEY_FILE} kali@${backendPrivateIp} "ls -la /home/kali/MERN/WebKidShop_BE"
+                    """
+
+                    echo "Checking Frontend Deployment on EC2..."
+                    sh """
+                    ssh -i ${KEY_FILE} kali@${frontendPrivateIp} "ls -la /home/kali/MERN/WebKidShop_FE"
+                    """
                 }
             }
         }
