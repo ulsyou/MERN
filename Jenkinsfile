@@ -126,7 +126,8 @@ pipeline {
                         awslocal s3 sync . s3://temp-backend-bucket > /dev/null 2>&1
                         
                         mkdir -p /tmp/ec2-user/backend
-                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend > 
+                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend > /dev/null 2>&1
+                        
                         cd /tmp/ec2-user/backend
                         npm install > /dev/null 2>&1
                         nohup npm start > /dev/null 2>&1 &
@@ -135,7 +136,7 @@ pipeline {
                 }
             }
         }
-        
+ 
         stage('Deploy Frontend') {
             steps {
                 script {
