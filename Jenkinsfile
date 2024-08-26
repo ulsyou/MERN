@@ -45,21 +45,6 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Create or Use Key Pair') {
-            steps {
-                script {
-                    if (!fileExists(KEY_FILE)) {
-                        sh """
-                        awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
-                        chmod 400 ${KEY_FILE}
-                        """
-                    } else {
-                        echo "Key pair already exists."
-                    }
-                }
-            }
-        }
 
         stage('Build') {
             steps {
@@ -112,6 +97,21 @@ pipeline {
                         
                         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
                         sh 'aws --endpoint-url=http://localhost:4566 s3api list-buckets'
+                    }
+                }
+            }
+        }
+
+        stage('Create or Use Key Pair') {
+            steps {
+                script {
+                    if (!fileExists(KEY_FILE)) {
+                        sh """
+                        awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
+                        chmod 400 ${KEY_FILE}
+                        """
+                    } else {
+                        echo "Key pair already exists."
                     }
                 }
             }
