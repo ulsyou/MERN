@@ -66,7 +66,6 @@ pipeline {
                         sh 'tflocal plan -out=tfplan'
                         sh 'tflocal show tfplan'
                         sh 'tflocal apply -auto-approve'
-                        sh 'tflocal show'
                         sh 'tflocal state list'
                         
                         def subnetId = sh(script: 'tflocal output subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
