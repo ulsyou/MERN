@@ -58,7 +58,7 @@ pipeline {
             }
         }
 
-        stage('Debug Terraform') {
+        stage('Terraform') {
             steps {
                 script {
                     dir("${TERRAFORM_DIR}") {
@@ -81,23 +81,23 @@ pipeline {
             }
         }
 
-        stage('Create or Use Key Pair') {
-            steps {
-                script {
-                    def keyFileExists = fileExists(KEY_FILE)
+        // stage('Create or Use Key Pair') {
+        //     steps {
+        //         script {
+        //             def keyFileExists = fileExists(KEY_FILE)
 
-                    if (!keyFileExists) {
-                        echo "Creating new key pair..."
-                        sh """
-                        awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
-                        chmod 400 ${KEY_FILE}
-                        """
-                    } else {
-                        echo "Key pair already exists."
-                    }
-                }
-            }
-        }
+        //             if (!keyFileExists) {
+        //                 echo "Creating new key pair..."
+        //                 sh """
+        //                 awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
+        //                 chmod 400 ${KEY_FILE}
+        //                 """
+        //             } else {
+        //                 echo "Key pair already exists."
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Check Health service') {
             steps {
