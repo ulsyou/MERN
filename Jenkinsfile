@@ -70,10 +70,14 @@ pipeline {
                         sh 'tflocal show'
                         sh 'tflocal state list'
                         
-                        echo "Subnet ID: $(tflocal output subnet_id || echo "No Subnet ID")"
-                        echo "EC2 Instance ID: $(tflocal output backend_instance_id || echo "No Instance ID")"
-                        echo "EC2 Private IP: $(tflocal output backend_instance_private_ip || echo "No Private IP")"
+                        def subnetId = sh(script: 'tflocal output subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
+                        def instanceId = sh(script: 'tflocal output backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
+                        def privateIp = sh(script: 'tflocal output backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
                         
+                        echo "Subnet ID: ${subnetId}"
+                        echo "EC2 Instance ID: ${instanceId}"
+                        echo "EC2 Private IP: ${privateIp}"
+
                         sh 'aws --endpoint-url=http://localhost:4566 ec2 describe-instances'
                         sh 'aws --endpoint-url=http://localhost:4566 s3api list-buckets'
                     }
