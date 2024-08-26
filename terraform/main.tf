@@ -68,7 +68,7 @@ resource "aws_instance" "backend_instance" {
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = var.frontend_ami  
+  ami                    = "ami-12345678"  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
