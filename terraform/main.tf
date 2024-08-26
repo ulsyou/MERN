@@ -60,7 +60,7 @@ resource "aws_instance" "backend_instance" {
   tags = {
     Name = "webkidshop-backend"
   }
-  user_data = base64encode(file("${path.module}/user-data.sh"))
+  user_data = base64encode(file("${path.module}/user-data.sh"))  
   
   lifecycle {
     create_before_destroy = true
@@ -75,16 +75,7 @@ resource "aws_instance" "frontend_instance" {
   tags = {
     Name = "webkidshop-frontend"
   }
-  user_data = base64encode(<<-EOF
-              #!/bin/bash
-              git clone https://github.com/your-repo/webkidshop-frontend.git /home/ec2-user/webkidshop-frontend
-              cd /home/ec2-user/webkidshop-frontend
-              npm install
-              npm run build
-              npm start
-              EOF
-  )
-  
+  user_data = base64encode(file("${path.module}/user-data.sh"))  
   lifecycle {
     create_before_destroy = true
   }
