@@ -124,11 +124,13 @@ pipeline {
                         sh """
                         awslocal s3 mb s3://temp-backend-bucket
                         awslocal s3 sync . s3://temp-backend-bucket
-                    
-                        awslocal ssm start-session \
-                            --target ${env.INSTANCE_ID} \
-                            --document-name AWS-StartInteractiveCommand \
-                            --parameters command="aws --endpoint-url=${LOCALSTACK_URL} s3 sync s3://temp-backend-bucket /home/ec2-user/backend && cd /home/ec2-user/backend && npm install && npm start &"
+                        
+                        # Mô phỏng việc copy dữ liệu và chạy ứng dụng trên EC2
+                        mkdir -p /tmp/ec2-user/backend
+                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend
+                        cd /tmp/ec2-user/backend
+                        npm install
+                        nohup npm start > /dev/null 2>&1 &
                         """
                     }
                 }
