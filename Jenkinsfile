@@ -141,7 +141,6 @@ pipeline {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
-                        // Install dependencies and start the application
                         sh """
                         npm install
                         nohup npm start > /dev/null 2>&1 &
@@ -156,14 +155,13 @@ pipeline {
             }
         }
 
-        stage('Check Health service'){
+        stage('Check Health service') {
             steps {
                 script {
                     sh '''curl http://localhost:4566/_localstack/health'''
                 }
             }
         }
-        
     }
 
     post {
