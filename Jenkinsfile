@@ -141,25 +141,17 @@ pipeline {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
-                        sh 'npm run build'
-        
-                        def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
-                        def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
-        
+                        // Install dependencies and start the application
                         sh """
-                        awslocal s3 mb s3://temp-frontend-bucket || true
-                        awslocal s3 sync build s3://temp-frontend-bucket > /dev/null 2>&1
-        
-                        # Mô phỏng việc copy dữ liệu và chạy ứng dụng frontend
-                        mkdir -p /tmp/ec2-user/frontend
-                        awslocal s3 sync s3://temp-frontend-bucket /tmp/ec2-user/frontend
-                        cd /tmp/ec2-user/frontend
-                        npm init -y
-                        npm install serve --save-dev
-                        nohup npx serve -s . -l 3000 > /dev/null 2>&1 &
+                        npm install
+                        nohup npm start > /dev/null 2>&1 &
                         """
                     }
-                    echo "Frontend deployed successfully to local environment on port 3000"
+        
+                    def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
+                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
+                    
+                    echo "Frontend deployed successfully on instance ${frontendInstanceId} at IP ${frontendPrivateIp}"
                 }
             }
         }
@@ -177,9 +169,8 @@ pipeline {
     post {
         success {
             script {
-                def frontendIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
                 echo 'Build Success!'
-                echo "Frontend is running on http://${frontendIp}:80"
+                echo "Frontend is running on http://${frontendPrivateIp}:80"
                 echo "Backend is running on http://${env.PRIVATE_IP}:3000"
             }
         }
