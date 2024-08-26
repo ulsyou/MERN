@@ -6,4 +6,4 @@ git clone https://github.com/ulsyou/MERN.git
 cd MERN/WebKidShop_BE
 
 npm install
-npm start
+nohup npm start > /dev/null 2>&1 &
