@@ -123,13 +123,12 @@ pipeline {
                     dir("${BACKEND_DIR}") {
                         sh """
                         awslocal s3 mb s3://temp-backend-bucket
-                        awslocal s3 sync . s3://temp-backend-bucket
+                        awslocal s3 sync . s3://temp-backend-bucket > /dev/null 2>&1
                         
-                        # Mô phỏng việc copy dữ liệu và chạy ứng dụng trên EC2
                         mkdir -p /tmp/ec2-user/backend
-                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend
+                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend > 
                         cd /tmp/ec2-user/backend
-                        npm install
+                        npm install > /dev/null 2>&1
                         nohup npm start > /dev/null 2>&1 &
                         """
                     }
@@ -148,7 +147,7 @@ pipeline {
         
                         sh """
                         awslocal s3 mb s3://temp-frontend-bucket || true
-                        awslocal s3 sync build s3://temp-frontend-bucket
+                        awslocal s3 sync build s3://temp-frontend-bucket > /dev/null 2>&1
         
                         # Mô phỏng việc copy dữ liệu và chạy ứng dụng frontend
                         mkdir -p /tmp/ec2-user/frontend
