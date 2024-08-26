@@ -105,7 +105,10 @@ pipeline {
         stage('Create or Use Key Pair') {
             steps {
                 script {
-                    if (!fileExists(KEY_FILE)) {
+                    def keyFileExists = fileExists(KEY_FILE)
+
+                    if (!keyFileExists) {
+                        echo "Creating new key pair..."
                         sh """
                         awslocal ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text | tee ${KEY_FILE}
                         chmod 400 ${KEY_FILE}
@@ -116,7 +119,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy Backend') {
             steps {
                 script {
