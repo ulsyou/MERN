@@ -114,6 +114,8 @@ pipeline {
                     def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
                     def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
 
+                    sh 'pwd'
+
                     echo "Checking Backend Deployment on EC2..."
                     sh """
                     ssh -i ${KEY_FILE} kali@${backendPrivateIp} "curl -s http://localhost:3000/health"
