@@ -131,6 +131,7 @@ pipeline {
                         cd /tmp/ec2-user/backend
                         npm install > /dev/null 2>&1
                         nohup npm start > /dev/null 2>&1 &
+                        sleep 10
                         """
                         
                         echo "Backend is running on http://${env.PRIVATE_IP}:3000"
@@ -151,7 +152,7 @@ pipeline {
         
                     def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
                     def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
-                    
+                    sh "sleep 10"
                     echo "Frontend deployed successfully on instance ${frontendInstanceId} at IP ${frontendPrivateIp}, is running on http://${frontendPrivateIp}:80"
                 }
             }
