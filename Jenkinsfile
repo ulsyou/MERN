@@ -121,39 +121,23 @@ pipeline {
             steps {
                 script {
                     dir("${BACKEND_DIR}") {
-                        sh """
-                        awslocal s3 mb s3://temp-backend-bucket
-                        awslocal s3 sync . s3://temp-backend-bucket > /dev/null 2>&1
-                        
-                        mkdir -p /tmp/ec2-user/backend
-                        awslocal s3 sync s3://temp-backend-bucket /tmp/ec2-user/backend > /dev/null 2>&1
-                        
-                        cd /tmp/ec2-user/backend
-                        npm install > /dev/null 2>&1
-                        nohup npm start > /dev/null 2>&1 &
-                        sleep 10
-                        """
-                        
-                        echo "Backend is running on http://${env.PRIVATE_IP}:3000"
+                        sh 'npm install > /dev/null 2>&1'
+                        def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                        echo "Backend is running on http://${backendPrivateIp}:3000"
                     }
                 }
             }
         }
- 
+
         stage('Deploy Frontend') {
             steps {
                 script {
                     dir("${FRONTEND_DIR}") {
-                        sh """
-                        npm install
-                        nohup npm start > /dev/null 2>&1 &
-                        """
+                        sh 'npm install --ignore-scripts > /dev/null 2>&1'
+                        sh 'npm run build > /dev/null 2>&1'
+                        def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
+                        echo "Frontend deployed successfully on IP ${frontendPrivateIp}, is running on http://${frontendPrivateIp}:80"
                     }
-        
-                    def frontendInstanceId = sh(script: 'tflocal output -raw frontend_instance_id || echo "No ID"', returnStdout: true).trim()
-                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
-                    sh "sleep 10"
-                    echo "Frontend deployed successfully on instance ${frontendInstanceId} at IP ${frontendPrivateIp}, is running on http://${frontendPrivateIp}:80"
                 }
             }
         }
