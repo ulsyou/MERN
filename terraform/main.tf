@@ -53,7 +53,7 @@ resource "aws_security_group" "allow_web" {
 }
 
 resource "aws_instance" "backend_instance" {
-  ami                    = "ami-12345678"
+  ami                    = "ami-12345678"  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -61,10 +61,14 @@ resource "aws_instance" "backend_instance" {
     Name = "webkidshop-backend"
   }
   user_data = base64encode(file("${path.module}/user-data.sh"))
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = "ami-12345678"
+  ami                    = "ami-12345678"  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -77,6 +81,10 @@ resource "aws_instance" "frontend_instance" {
               yum install -y python3
               EOF
   )
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_s3_bucket" "temp_frontend_bucket" {
