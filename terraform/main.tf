@@ -68,7 +68,7 @@ resource "aws_instance" "backend_instance" {
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = "ami-12345678"  
+  ami                    = var.frontend_ami  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -77,8 +77,11 @@ resource "aws_instance" "frontend_instance" {
   }
   user_data = base64encode(<<-EOF
               #!/bin/bash
-              yum update -y
-              yum install -y python3
+              git clone https://github.com/your-repo/webkidshop-frontend.git /home/ec2-user/webkidshop-frontend
+              cd /home/ec2-user/webkidshop-frontend
+              npm install
+              npm run build
+              npm start
               EOF
   )
   
@@ -86,6 +89,7 @@ resource "aws_instance" "frontend_instance" {
     create_before_destroy = true
   }
 }
+
 
 resource "aws_s3_bucket" "temp_frontend_bucket" {
   bucket = "temp-frontend-bucket"
