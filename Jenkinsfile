@@ -166,9 +166,6 @@ pipeline {
     }
 
     post {
-        always {
-            cleanWs()
-        }
         success {
             script {
                 def frontendIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
