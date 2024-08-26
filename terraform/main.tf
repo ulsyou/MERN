@@ -60,7 +60,7 @@ resource "aws_instance" "backend_instance" {
   tags = {
     Name = "webkidshop-backend"
   }
-  user_data = base64encode(file("${path.module}/user-data.sh"))  
+  user_data = base64encode(file("${path.module}/user-data.sh"))
   
   lifecycle {
     create_before_destroy = true
@@ -75,12 +75,12 @@ resource "aws_instance" "frontend_instance" {
   tags = {
     Name = "webkidshop-frontend"
   }
-  user_data = base64encode(file("${path.module}/user-data.sh"))  
+  user_data = base64encode(file("${path.module}/user-data.sh"))
+  
   lifecycle {
     create_before_destroy = true
   }
 }
-
 
 resource "aws_s3_bucket" "temp_frontend_bucket" {
   bucket = "temp-frontend-bucket"
