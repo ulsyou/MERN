@@ -105,6 +105,7 @@ pipeline {
             steps {
                 script {
                     sh '''curl http://localhost:4566/_localstack/health'''
+                    sh '''  aws --endpoint-url=http://localhost:4566 ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId,PrivateIpAddress]' --output table '''
                 }
             }
         }
