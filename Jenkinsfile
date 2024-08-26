@@ -150,11 +150,13 @@ pipeline {
                         awslocal s3 mb s3://temp-frontend-bucket || true
                         awslocal s3 sync build s3://temp-frontend-bucket
         
+                        # Mô phỏng việc copy dữ liệu và chạy ứng dụng frontend
                         mkdir -p /tmp/ec2-user/frontend
                         awslocal s3 sync s3://temp-frontend-bucket /tmp/ec2-user/frontend
                         cd /tmp/ec2-user/frontend
-                        npm install -g serve
-                        nohup serve -s . -l 3000 > /dev/null 2>&1 &
+                        npm init -y
+                        npm install serve --save-dev
+                        nohup npx serve -s . -l 3000 > /dev/null 2>&1 &
                         """
                     }
                     echo "Frontend deployed successfully to local environment on port 3000"
