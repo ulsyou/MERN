@@ -163,6 +163,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Check Health service'){
+            steps {
+                script {
+                    sh '''curl http://localhost:4566/_localstack/health'''
+                }
+            }
+        }
+        
     }
 
     post {
