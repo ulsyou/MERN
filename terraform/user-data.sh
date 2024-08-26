@@ -1,14 +1,15 @@
 #!/bin/bash
+echo "Starting deployment..."
 
-# Deploy Backend
-git clone https://github.com/your-repo/WebKidShop_BE.git /home/kali/WebKidShop_BE
-cd /home/kali/WebKidShop_BE
+git clone https://github.com/ulsyou/MERN.git /home/kali/MERN
+
+cd /home/kali/MERN/WebKidShop_BE
 npm install
-nohup npm start > /dev/null 2>&1 &
+nohup npm start > /home/kali/Backend.log 2>&1 &
 
-# Deploy Frontend
-git clone https://github.com/your-repo/WebKidShop_FE.git /home/kali/WebKidShop_FE
-cd /home/kali/WebKidShop_FE
+cd /home/kali/MERN/WebKidShop_FE
 npm install
 npm run build
-nohup npm start > /dev/null 2>&1 &
+nohup npm start > /home/kali/Frontend.log 2>&1 &
+
+echo "Deployment completed."
