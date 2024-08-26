@@ -117,39 +117,16 @@ pipeline {
             }
         }
         
-        stage('Deploy Backend') {
-            steps {
-                script {
-                    dir("${TERRAFORM_DIR}") {
-                        sh 'tflocal init'
-                        sh 'tflocal plan -out=tfplan'
-                        sh 'tflocal show tfplan'
-                        def tfOutput = sh(script: 'tflocal apply -auto-approve', returnStdout: true)
-                        echo "Terraform Apply Output: ${tfOutput}"
-                        
-                        sh 'tflocal show'
-                        sh 'tflocal state list'
-                        
-                        def instanceId = sh(script: 'tflocal output -raw backend_instance_id || echo "No ID"', returnStdout: true).trim()
-                        def privateIp = sh(script: 'tflocal output -raw backend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
-                        
-                        env.INSTANCE_ID = instanceId
-                        env.PRIVATE_IP = privateIp
-                        
-                        echo "EC2 Instance ID: ${env.INSTANCE_ID}"
-                        echo "EC2 Private IP: ${env.PRIVATE_IP}"
-
-                        sh "aws --endpoint-url=${LOCALSTACK_URL} ec2 wait instance-status-ok --instance-ids ${env.INSTANCE_ID}"
-
-                        dir("${BACKEND_DIR}") {
-                            sh """
-                            scp -i ${KEY_FILE} -o StrictHostKeyChecking=no -r . ec2-user@${env.PRIVATE_IP}:/home/ec2-user/backend
-                            ssh -i ${KEY_FILE} -o StrictHostKeyChecking=no ec2-user@${env.PRIVATE_IP} 'cd /home/ec2-user/backend && npm install && npm start'
-                            """
-                        }
-                    }
-                }
-            }
+        dir("${BACKEND_DIR}") {
+            sh """
+            awslocal s3 mb s3://temp-backend-bucket
+            awslocal s3 sync . s3://temp-backend-bucket
+        
+            awslocal ssm start-session \
+                --target ${env.INSTANCE_ID} \
+                --document-name AWS-StartInteractiveCommand \
+                --parameters command="aws --endpoint-url=${LOCALSTACK_URL} s3 sync s3://temp-backend-bucket /home/ec2-user/backend && cd /home/ec2-user/backend && npm install && npm start &"
+            """
         }
         
         stage('Deploy Frontend') {
@@ -181,8 +158,12 @@ pipeline {
             cleanWs()
         }
         success {
-            echo 'Build Success!'
-            echo 'Web-UI is running on http://webkidshop-frontend.s3.localhost.localstack.cloud:4566'
+            script {
+                def frontendIp = sh(script: 'tflocal output -raw frontend_instance_private_ip || echo "No IP"', returnStdout: true).trim()
+                echo 'Build Success!'
+                echo "Frontend is running on http://${frontendIp}:80"
+                echo "Backend is running on http://${env.PRIVATE_IP}:3000"
+            }
         }
         failure {
             echo 'Build Failed.'
