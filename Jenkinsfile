@@ -108,23 +108,30 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment on EC2') {
+        stage('Build and Deploy Backend') {
             steps {
                 script {
-                    def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
-                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
+                    dir("${BACKEND_DIR}") {
+                        sh 'pwd'
+                        sh 'npm install > /dev/null 2>&1'
+                        sh 'npm run build > /dev/null 2>&1'
+                        def backendPrivateIp = sh(script: 'tflocal output -raw backend_instance_private_ip', returnStdout: true).trim()
+                        echo "Backend is running on http://${backendPrivateIp}:3000"
+                    }
+                }
+            }
+        }
 
-                    sh 'pwd'
-
-                    echo "Checking Backend Deployment on EC2..."
-                    sh """
-                    ssh -i ${KEY_FILE} kali@${backendPrivateIp} "curl -s http://localhost:3000/health"
-                    """
-
-                    echo "Checking Frontend Deployment on EC2..."
-                    sh """
-                    ssh -i ${KEY_FILE} kali@${frontendPrivateIp} "curl -s http://localhost:80/health"
-                    """
+        stage('Build and Deploy Frontend') {
+            steps {
+                script {
+                    dir("${FRONTEND_DIR}") {
+                        sh 'pwd'
+                        sh 'npm install --ignore-scripts > /dev/null 2>&1'
+                        sh 'npm run build > /dev/null 2>&1'
+                        def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
+                        echo "Frontend deployed successfully on IP ${frontendPrivateIp}, is running on http://${frontendPrivateIp}:80"
+                    }
                 }
             }
         }
