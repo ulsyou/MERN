@@ -63,7 +63,6 @@ pipeline {
                 script {
                     dir("${TERRAFORM_DIR}") {
                         sh 'tflocal init'
-                        sh 'tflocal refresh'
                         sh 'tflocal plan -out=tfplan'
                         sh 'tflocal show tfplan'
                         sh 'tflocal apply -auto-approve'
