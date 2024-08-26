@@ -106,21 +106,11 @@ pipeline {
                 script {
                     sh '''curl http://localhost:4566/_localstack/health'''
                     sh '''  aws --endpoint-url=http://localhost:4566 ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId,PrivateIpAddress]' --output table '''
-                    sh ''' localstack logs '''
                 }
             }
-        }
-        
-        stage('Get Frontend URL') {
-            steps {
-                script {
-                    def frontendPrivateIp = sh(script: 'tflocal output -raw frontend_instance_private_ip', returnStdout: true).trim()
-                    echo "Frontend is deployed on http://${frontendPrivateIp}:80"
-                }
-            }
-        }
-        
+        }        
     }
+    
     post {
         success {
             script {
