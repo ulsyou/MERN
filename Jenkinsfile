@@ -20,30 +20,35 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    if ! command -v pip &> /dev/null
-                    then
-                        apt-get update && apt-get install -y python3-pip > /dev/null 2>&1
+                    # Check and install pip if not available
+                    if ! command -v pip3 &> /dev/null; then
+                        echo "Installing pip3..."
+                        sudo apt-get update && sudo apt-get install -y python3-pip
                     fi
-
-                    if ! command -v terraform &> /dev/null
-                    then
-                        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-                        sudo apt update && sudo apt install terraform > /dev/null 2>&1
+        
+                    # Install or upgrade AWS CLI
+                    echo "Installing/upgrading AWS CLI..."
+                    pip3 install --user --upgrade awscli
+        
+                    # Check Terraform version
+                    if command -v terraform &> /dev/null; then
+                        echo "Terraform is already installed:"
+                        terraform version
+                    else
+                        echo "Installing Terraform..."
+                        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+                        sudo apt-get update && sudo apt-get install -y terraform
                     fi
-
-                    if ! command -v aws &> /dev/null
-                    then
-                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
-                        unzip -o awscliv2.zip > /dev/null 2>&1
-                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update > /dev/null 2>&1
-                    fi
-
+        
+                    # Print versions
+                    echo "Installed versions:"
+                    terraform version
                     aws --version
                 '''
             }
         }
-
+        
         stage('Terraform') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
