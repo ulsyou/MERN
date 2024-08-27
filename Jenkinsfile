@@ -22,24 +22,18 @@ pipeline {
                 sh '''
                     whoami
                     # Install pip if not available
-                    if ! which pip3 &> /dev/null; then
-                        echo "pip3 not found. Installing pip3..."
-                        sudo apt-get update
-                        sudo apt-get install -y python3-pip
-                    fi
-
+                    which pip3 || sudo apt-get update && sudo apt-get install -y python3-pip
+        
                     # Install or upgrade AWS CLI
                     pip3 install --user --upgrade awscli
-
+        
                     # Install Terraform if not available
                     if ! command -v terraform &> /dev/null; then
-                        echo "Terraform not found. Installing Terraform..."
-                        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-                        sudo apt-get update
-                        sudo apt-get install -y terraform
+                        wget https://releases.hashicorp.com/terraform/1.5.4/terraform_1.5.4_linux_amd64.zip
+                        unzip terraform_1.5.4_linux_amd64.zip
+                        sudo mv terraform /usr/local/bin/
                     fi
-
+        
                     # Print versions
                     terraform version
                     aws --version
