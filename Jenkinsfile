@@ -62,30 +62,28 @@ pipeline {
                     script {
                         def instanceId = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].InstanceId' --output text", returnStdout: true).trim()
                         
-                        // Upload files to S3
-                        sh "aws s3 cp ${FRONTEND_DIR} s3://temp-frontend-bucket/${FRONTEND_DIR} --recursive"
-                        sh "aws s3 cp ${BACKEND_DIR} s3://temp-backend-bucket/${BACKEND_DIR} --recursive"
-                        sh "aws s3 cp docker-compose.yml s3://temp-frontend-bucket/"
-        
-                        // Use SSM to run commands on EC2
-                        sh '''
-                        aws ssm send-command \
-                            --instance-ids "''' + instanceId + '''" \
-                            --document-name "AWS-RunShellScript" \
-                            --parameters 'commands=[
-                                "sudo yum update -y",
-                                "sudo amazon-linux-extras install docker -y",
-                                "sudo service docker start",
-                                "sudo usermod -a -G docker ec2-user",
-                                "sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\\$(uname -s)-\\$(uname -m)\\" -o /usr/local/bin/docker-compose",
-                                "sudo chmod +x /usr/local/bin/docker-compose",
-                                "aws s3 cp s3://temp-frontend-bucket/${FRONTEND_DIR} ~/${FRONTEND_DIR} --recursive",
-                                "aws s3 cp s3://temp-backend-bucket/${BACKEND_DIR} ~/${BACKEND_DIR} --recursive",
-                                "aws s3 cp s3://temp-frontend-bucket/docker-compose.yml ~/docker-compose.yml",
-                                "cd ~ && docker-compose up -d --build"
-                            ]' \
-                            --output text
-                        '''
+                        def sessionId = sh(script: "aws ssm start-session --target ${instanceId} --document-name AWS-StartInteractiveCommand --parameters command=\"bash -l\" --output text | awk '{print \$4}'", returnStdout: true).trim()
+                        
+                        sh """
+                            aws ssm send-command \
+                                --instance-ids "${instanceId}" \
+                                --document-name "AWS-RunShellScript" \
+                                --parameters 'commands=[
+                                    "mkdir -p ~/deployment",
+                                    "cd ~/deployment",
+                                    "git clone https://github.com/your-repo/WebKidShop_FE.git",
+                                    "git clone https://github.com/your-repo/WebKidShop_BE.git",
+                                    "sudo yum update -y",
+                                    "sudo amazon-linux-extras install docker -y",
+                                    "sudo service docker start",
+                                    "sudo usermod -a -G docker ec2-user",
+                                    "sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\\$(uname -s)-\\$(uname -m)\\" -o /usr/local/bin/docker-compose",
+                                    "sudo chmod +x /usr/local/bin/docker-compose",
+                                    "docker-compose up -d --build"
+                                ]' \
+                                --output text
+                        """
+                        sh "aws ssm terminate-session --session-id ${sessionId}"
                     }
                 }
             }
