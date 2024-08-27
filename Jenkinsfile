@@ -38,15 +38,18 @@ pipeline {
                     sshagent(credentials: ['ec2-ssh-key']) {
                         sh """
                             ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-237-92-167.ap-southeast-2.compute.amazonaws.com << 'EOF'
+                   
+                            sudo yum install -y git
+                            
                             mkdir -p ~/deployment
+                            
                             cd ~/deployment
-                            git clone https://github.com/ulsyou/MERN/tree/master/WebKidShop_FE
-
-                            cd WebKidShop_FE
+                            git clone https://github.com/ulsyou/MERN.git
+                            cd MERN/WebKidShop_FE
+                            
                             sudo yum install -y nodejs npm
-
+                            
                             npm install
-
                             npm run build
                             npm start
                             EOF
