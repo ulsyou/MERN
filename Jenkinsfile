@@ -47,11 +47,9 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${frontendIp} << 'EOF'
                                 sudo apt-get update
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                                sudo apt-get install -y nodejs
-                                cd /correct/path/to/frontend && npm install
-                                npm run build
-                                # Start the frontend server if needed
-                                pm2 start server.js --name frontend
+                                sudo apt-get install -y nodejs=18.15.0-1nodesource1
+        
+                                cd /home/ec2-user/WebKidShop_FE && npm install --save react@18.2.0
                             EOF
                             """
         
@@ -60,15 +58,15 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${backendIp} << 'EOF'
                                 sudo apt-get update
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                                sudo apt-get install -y nodejs
+                                sudo apt-get install -y nodejs=18.15.0-1nodesource1
+        
                                 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
                                 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu \$(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-                                sudo apt-get update && sudo apt-get install -y mongodb-org
+                                sudo apt-get update && sudo apt-get install -y mongodb-org=6.0.10
                                 sudo systemctl start mongod
                                 sudo systemctl enable mongod
-                                cd /correct/path/to/backend && npm install
-                                # Start the backend server
-                                pm2 start server.js --name backend
+        
+                                cd /home/ec2-user/WebKidShop_BE && npm install --save express@4.18.2 paypal-rest-sdk@1.8.1
                             EOF
                             """
                         }
