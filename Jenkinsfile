@@ -20,21 +20,26 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                whoami
-                which pip3
-                sudo apt-get install -y python3-pip
-                pip3 install --user --upgrade awscli
-                wget https://releases.hashicorp.com/terraform/1.5.4/terraform_1.5.4_linux_amd64.zip
-                
-                # Check if terraform is a directory and remove it if it is
-                if [ -d "terraform" ]; then
-                    echo "Removing old terraform directory..."
-                    rm -rf terraform
-                fi
-        
-                unzip -o terraform_1.5.4_linux_amd64.zip
-                mv terraform /usr/local/bin/terraform
-                terraform version
+                    if ! command -v pip &> /dev/null
+                    then
+                        apt-get update && apt-get install -y python3-pip > /dev/null 2>&1
+                    fi
+
+                    if ! command -v terraform &> /dev/null
+                    then
+                        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+                        sudo apt update && sudo apt install terraform > /dev/null 2>&1
+                    fi
+
+                    if ! command -v aws &> /dev/null
+                    then
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1
+                        unzip -o awscliv2.zip > /dev/null 2>&1
+                        ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update > /dev/null 2>&1
+                    fi
+
+                    aws --version
                 '''
             }
         }
