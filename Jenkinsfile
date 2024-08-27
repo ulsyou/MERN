@@ -71,8 +71,8 @@ pipeline {
                                 --parameters 'commands=[
                                     "mkdir -p ~/deployment",
                                     "cd ~/deployment",
-                                    "git clone https://github.com/your-repo/WebKidShop_FE.git",
-                                    "git clone https://github.com/your-repo/WebKidShop_BE.git",
+                                    "git clone https://github.com/ulsyou/MERN/WebKidShop_FE.git",
+                                    "git clone https://github.com/ulsyou/MERN/WebKidShop_BE.git",
                                     "sudo yum update -y",
                                     "sudo amazon-linux-extras install docker -y",
                                     "sudo service docker start",
