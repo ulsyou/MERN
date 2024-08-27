@@ -44,7 +44,7 @@ pipeline {
                             
                             // Install on Frontend Instance
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${frontendIp} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${frontendIp} << 'EOF'
                                 sudo apt-get update
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                                 sudo apt-get install -y nodejs
@@ -57,7 +57,7 @@ pipeline {
         
                             // Install on Backend Instance
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${backendIp} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${backendIp} << 'EOF'
                                 sudo apt-get update
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                                 sudo apt-get install -y nodejs
