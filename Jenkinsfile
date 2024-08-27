@@ -6,8 +6,6 @@ pipeline {
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
         AWS_DEFAULT_REGION = 'ap-southeast-2'
-        KEY_NAME = 'my-key'
-        PATH = "$HOME/.local/bin:$PATH"
     }
 
     stages {
@@ -34,42 +32,60 @@ pipeline {
             }
         }
 
-        stage('Install on EC2') {
+        stage('Prepare Deployment') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'KEY')]) {
-                    withAWS(credentials: 'aws-credentials', region: 'ap-southeast-2') { 
-                        script {
-                            def frontendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
-                            def backendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-backend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
-                            
-                            // Install on Frontend Instance
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${frontendIp} << 'EOF'
-                                sudo apt-get update
-                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                                sudo apt-get install -y nodejs=18.15.0-1nodesource1
-        
-                                cd /home/ec2-user/WebKidShop_FE && npm install --save react@18.2.0
-                            EOF
-                            """
-        
-                            // Install on Backend Instance
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${KEY} ec2-user@${backendIp} << 'EOF'
-                                sudo apt-get update
-                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                                sudo apt-get install -y nodejs=18.15.0-1nodesource1
-        
-                                wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-                                echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu \$(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-                                sudo apt-get update && sudo apt-get install -y mongodb-org=6.0.10
-                                sudo systemctl start mongod
-                                sudo systemctl enable mongod
-        
-                                cd /home/ec2-user/WebKidShop_BE && npm install --save express@4.18.2 paypal-rest-sdk@1.8.1
-                            EOF
-                            """
-                        }
+                script {
+                    // Create docker-compose.yml
+                    writeFile file: 'docker-compose.yml', text: '''
+                    version: '3'
+                    services:
+                      frontend:
+                        build: ./WebKidShop_FE
+                        ports:
+                          - "3000:3000"
+                      backend:
+                        build: ./WebKidShop_BE
+                        ports:
+                          - "5000:5000"
+                      mongodb:
+                        image: mongo:6.0
+                        ports:
+                          - "27017:27017"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'ap-southeast-2') { 
+                    script {
+                        def instanceId = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].InstanceId' --output text", returnStdout: true).trim()
+                        
+                        // Upload files to S3
+                        sh "aws s3 cp ${FRONTEND_DIR} s3://temp-frontend-bucket/${FRONTEND_DIR} --recursive"
+                        sh "aws s3 cp ${BACKEND_DIR} s3://temp-backend-bucket/${BACKEND_DIR} --recursive"
+                        sh "aws s3 cp docker-compose.yml s3://temp-frontend-bucket/"
+
+                        // Use SSM to run commands on EC2
+                        sh """
+                        aws ssm send-command \
+                            --instance-ids "${instanceId}" \
+                            --document-name "AWS-RunShellScript" \
+                            --parameters 'commands=[
+                                "sudo yum update -y",
+                                "sudo amazon-linux-extras install docker -y",
+                                "sudo service docker start",
+                                "sudo usermod -a -G docker ec2-user",
+                                "sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\\$(uname -s)-\\$(uname -m)\\" -o /usr/local/bin/docker-compose",
+                                "sudo chmod +x /usr/local/bin/docker-compose",
+                                "aws s3 cp s3://temp-frontend-bucket/${FRONTEND_DIR} ~/${FRONTEND_DIR} --recursive",
+                                "aws s3 cp s3://temp-backend-bucket/${BACKEND_DIR} ~/${BACKEND_DIR} --recursive",
+                                "aws s3 cp s3://temp-frontend-bucket/docker-compose.yml ~/docker-compose.yml",
+                                "cd ~ && docker-compose up -d --build"
+                            ]' \
+                            --output text
+                        """
                     }
                 }
             }
@@ -91,10 +107,10 @@ pipeline {
     
     post {
         success {
-            echo 'Build Success!'
+            echo 'Deployment Success!'
         }
         failure {
-            echo 'Build Failed.'
+            echo 'Deployment Failed.'
         }
     }
 }
