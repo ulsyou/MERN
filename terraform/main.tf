@@ -33,8 +33,12 @@ resource "aws_route_table_association" "a" {
 }
 
 resource "aws_eip" "frontend_instance" {
-  instance = aws_instance.frontend_instance.id
-  domain   = "vpc"
+  domain = "vpc"
+}
+
+resource "aws_eip_association" "frontend_instance_eip_association" {
+  instance_id = aws_instance.frontend_instance.id
+  allocation_id = aws_eip.frontend_instance.id
 }
 
 resource "aws_security_group" "allow_web" {
@@ -51,7 +55,7 @@ resource "aws_security_group" "allow_web" {
   }
 
   ingress {
-    description = "HTTP"
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -59,7 +63,7 @@ resource "aws_security_group" "allow_web" {
   }
 
   ingress {
-    description = "HTTP"
+    description = "Custom App Port"
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
