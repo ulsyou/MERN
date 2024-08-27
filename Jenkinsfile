@@ -37,42 +37,39 @@ pipeline {
         stage('Install on EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'KEY')]) {
-                    script {
-                        def frontendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
-                        def backendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-backend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
-                        
-                        // Install on Frontend Instance
-                        sh """
-                        ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${frontendIp} << 'EOF'
-                            # Update and install Node.js
-                            sudo apt-get update
-                            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                            sudo apt-get install -y nodejs
-
-                            # Install project dependencies
-                            cd /path/to/frontend && npm install
-                        EOF
-                        """
-
-                        // Install on Backend Instance
-                        sh """
-                        ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${backendIp} << 'EOF'
-                            # Update and install Node.js
-                            sudo apt-get update
-                            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                            sudo apt-get install -y nodejs
-
-                            # Install MongoDB
-                            wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-                            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu \$(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-                            sudo apt-get update && sudo apt-get install -y mongodb-org
-                            sudo systemctl start mongod
-                            sudo systemctl enable mongod
-
-                            # Install project dependencies
-                            cd /path/to/backend && npm install
-                        EOF
-                        """
+                    withAWS(credentials: 'aws-credentials', region: 'ap-southeast-2') { 
+                        script {
+                            def frontendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
+                            def backendIp = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-backend --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
+                            
+                            // Install on Frontend Instance
+                            sh """
+                            ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${frontendIp} << 'EOF'
+                                sudo apt-get update
+                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                                sudo apt-get install -y nodejs
+        
+                                cd /correct/path/to/frontend && npm install
+                            EOF
+                            """
+        
+                            // Install on Backend Instance
+                            sh """
+                            ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${backendIp} << 'EOF'
+                                sudo apt-get update
+                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                                sudo apt-get install -y nodejs
+        
+                                wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+                                echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu \$(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+                                sudo apt-get update && sudo apt-get install -y mongodb-org
+                                sudo systemctl start mongod
+                                sudo systemctl enable mongod
+        
+                                cd /correct/path/to/backend && npm install
+                            EOF
+                            """
+                        }
                     }
                 }
             }
