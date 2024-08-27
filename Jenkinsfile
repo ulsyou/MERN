@@ -79,7 +79,7 @@ pipeline {
                                 "sudo usermod -a -G docker ec2-user",
                                 "sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\\$(uname -s)-\\$(uname -m)\\" -o /usr/local/bin/docker-compose",
                                 "sudo chmod +x /usr/local/bin/docker-compose",
-                                "aws s3 cp s3://temp-frontend-bucket/''' + FRONTEND_DIR + ''' ~/' + FRONTEND_DIR + ''' --recursive",
+                                "aws s3 cp s3://temp-frontend-bucket/${FRONTEND_DIR} ~/${FRONTEND_DIR} --recursive",
                                 "aws s3 cp s3://temp-backend-bucket/''' + BACKEND_DIR + ''' ~/' + BACKEND_DIR + ''' --recursive",
                                 "aws s3 cp s3://temp-frontend-bucket/docker-compose.yml ~/docker-compose.yml",
                                 "cd ~ && docker-compose up -d --build"
