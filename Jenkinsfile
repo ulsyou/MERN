@@ -60,18 +60,38 @@ pipeline {
             steps {
                 withAWS(credentials: 'aws-credentials', region: 'ap-southeast-2') { 
                     script {
-                        def instanceId = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].InstanceId' --output text", returnStdout: true).trim()
+                        // Get Instance IDs
+                        def frontendInstanceId = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-frontend --query 'Reservations[0].Instances[0].InstanceId' --output text", returnStdout: true).trim()
+                        def backendInstanceId = sh(script: "aws ec2 describe-instances --filters Name=tag:Name,Values=webkidshop-backend --query 'Reservations[0].Instances[0].InstanceId' --output text", returnStdout: true).trim()
                         
-                        def sessionId = sh(script: "aws ssm start-session --target ${instanceId} --document-name AWS-StartInteractiveCommand --parameters command=\"bash -l\" --output text | awk '{print \$4}'", returnStdout: true).trim()
-                        
+                        // Deploy frontend
                         sh """
                             aws ssm send-command \\
-                                --instance-ids "${instanceId}" \\
+                                --instance-ids "${frontendInstanceId}" \\
                                 --document-name "AWS-RunShellScript" \\
                                 --parameters 'commands=[
                                     "mkdir -p ~/deployment",
                                     "cd ~/deployment",
                                     "git clone https://github.com/ulsyou/MERN/WebKidShop_FE.git",
+                                    "sudo yum update -y",
+                                    "sudo amazon-linux-extras install docker -y",
+                                    "sudo service docker start",
+                                    "sudo usermod -a -G docker ec2-user",
+                                    "sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)\\" -o /usr/local/bin/docker-compose",
+                                    "sudo chmod +x /usr/local/bin/docker-compose",
+                                    "docker-compose up -d --build"
+                                ]' \\
+                                --output text
+                        """
+                        
+                        // Deploy backend
+                        sh """
+                            aws ssm send-command \\
+                                --instance-ids "${backendInstanceId}" \\
+                                --document-name "AWS-RunShellScript" \\
+                                --parameters 'commands=[
+                                    "mkdir -p ~/deployment",
+                                    "cd ~/deployment",
                                     "git clone https://github.com/ulsyou/MERN/WebKidShop_BE.git",
                                     "sudo yum update -y",
                                     "sudo amazon-linux-extras install docker -y",
@@ -83,7 +103,6 @@ pipeline {
                                 ]' \\
                                 --output text
                         """
-                        sh "aws ssm terminate-session --session-id ${sessionId}"
                     }
                 }
             }
