@@ -1,14 +1,5 @@
 provider "aws" {
-  access_key                  = "test"
-  secret_key                  = "test"
-  region                      = "us-east-1"
-  s3_use_path_style           = true
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  endpoints {
-    ec2 = "http://localhost:4566"
-    s3  = "http://localhost:4566"
-  }
+  region = "ap-southeast-2"
 }
 
 resource "aws_vpc" "default" {
@@ -20,7 +11,7 @@ resource "aws_vpc" "default" {
 resource "aws_subnet" "default" {
   vpc_id            = aws_vpc.default.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = "ap-southeast-2a"
 }
 
 resource "aws_internet_gateway" "gw" {
@@ -84,7 +75,7 @@ resource "aws_security_group" "allow_web" {
 }
 
 resource "aws_instance" "backend_instance" {
-  ami                    = "ami-12345678"  
+  ami                    = "ami-0cb4a336f1f3acee6"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -99,7 +90,7 @@ resource "aws_instance" "backend_instance" {
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = "ami-12345678"  
+  ami                    = "ami-0cb4a336f1f3acee6"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
