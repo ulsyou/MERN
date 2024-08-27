@@ -33,6 +33,8 @@ pipeline {
                 fi
         
                 unzip -o terraform_1.5.4_linux_amd64.zip
+                mv terraform /usr/local/bin/terraform
+                terraform version
                 '''
             }
         }
