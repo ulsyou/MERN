@@ -20,23 +20,19 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    whoami
-                    # Install pip if not available
-                    which pip3 || sudo apt-get update && sudo apt-get install -y python3-pip
+                whoami
+                which pip3
+                sudo apt-get install -y python3-pip
+                pip3 install --user --upgrade awscli
+                wget https://releases.hashicorp.com/terraform/1.5.4/terraform_1.5.4_linux_amd64.zip
+                
+                # Check if terraform is a directory and remove it if it is
+                if [ -d "terraform" ]; then
+                    echo "Removing old terraform directory..."
+                    rm -rf terraform
+                fi
         
-                    # Install or upgrade AWS CLI
-                    pip3 install --user --upgrade awscli
-        
-                    # Install Terraform if not available
-                    if ! command -v terraform &> /dev/null; then
-                        wget https://releases.hashicorp.com/terraform/1.5.4/terraform_1.5.4_linux_amd64.zip
-                        unzip -o terraform_1.5.4_linux_amd64.zip
-                        sudo mv terraform /usr/local/bin/
-                    fi
-        
-                    # Print versions
-                    terraform version
-                    aws --version
+                unzip -o terraform_1.5.4_linux_amd64.zip
                 '''
             }
         }
