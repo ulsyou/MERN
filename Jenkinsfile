@@ -17,38 +17,6 @@ pipeline {
             }
         }
         
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    # Check and install pip if not available
-                    if ! command -v pip3 &> /dev/null; then
-                        echo "Installing pip3..."
-                        sudo apt-get update && sudo apt-get install -y python3-pip
-                    fi
-        
-                    # Install or upgrade AWS CLI
-                    echo "Installing/upgrading AWS CLI..."
-                    pip3 install --user --upgrade awscli
-        
-                    # Check Terraform version
-                    if command -v terraform &> /dev/null; then
-                        echo "Terraform is already installed:"
-                        terraform version
-                    else
-                        echo "Installing Terraform..."
-                        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
-                        sudo apt-get update && sudo apt-get install -y terraform
-                    fi
-        
-                    # Print versions
-                    echo "Installed versions:"
-                    terraform version
-                    aws --version
-                '''
-            }
-        }
-        
         stage('Terraform') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
@@ -59,45 +27,49 @@ pipeline {
                         dir("${TERRAFORM_DIR}") {
                             sh 'terraform init -no-color'
                             sh 'terraform plan -out=tfplan -no-color'
-                            sh 'terraform show -no-color tfplan'
                             sh 'terraform apply -auto-approve -no-color'
-                            sh 'terraform state list -no-color'
-                            
-                            def subnetId = sh(script: 'terraform output -no-color subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
-                            def instanceId = sh(script: 'terraform output -no-color backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
-                            def privateIp = sh(script: 'terraform output -no-color backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
-                            
-                            echo "Subnet ID: ${subnetId}"
-                            echo "EC2 Instance ID: ${instanceId}"
-                            echo "EC2 Private IP: ${privateIp}"
-
-                            sh 'aws ec2 describe-instances'
-                            sh 'aws s3api list-buckets'
                         }
                     }
                 }
             }
         }
 
-        stage('Manage Key Pair') {
+        stage('Install on EC2') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'aws-credentials', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'KEY')]) {
                     script {
-                        def keyExists = sh(script: "aws ec2 describe-key-pairs --key-names ${KEY_NAME} --query 'KeyPairs[*].[KeyName]' --output text", returnStatus: true) == 0
-
-                        if (!keyExists) {
-                            echo "Creating new key pair..."
-                            sh """
-                            aws ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text > ${KEY_NAME}.pem
-                            chmod 400 ${KEY_NAME}.pem
-                            """
-                        } else {
-                            echo "Key pair already exists."
-                        }
+                        def ec2Ip = sh(script: "aws ec2 describe-instances --query 'Reservations[0].Instances[0].PublicIpAddress' --output text", returnStdout: true).trim()
+                        
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i ${KEY} ubuntu@${ec2Ip} << 'EOF'
+                            # Update and install Node.js
+                            sudo apt-get update
+                            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                            sudo apt-get install -y nodejs
+                            
+                            # Install MongoDB
+                            wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+                            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu \$(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+                            sudo apt-get update && sudo apt-get install -y mongodb-org
+                            sudo systemctl start mongod
+                            sudo systemctl enable mongod
+                            
+                            # Install project dependencies
+                            cd /path/to/backend && npm install
+                            cd /path/to/frontend && npm install
+                        EOF
+                        """
                     }
+                }
+            }
+        }
+        
+        stage('Deploy Application') {
+            steps {
+                script {
+                    // Add your deployment steps here
+                    echo 'Deploying application...'
+                    // Example: scp files to EC2 instances, or configure services to start
                 }
             }
         }
