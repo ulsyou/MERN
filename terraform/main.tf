@@ -75,7 +75,7 @@ resource "aws_security_group" "allow_web" {
 }
 
 resource "aws_instance" "backend_instance" {
-  ami                    = "ami-0cb4a336f1f3acee6"
+  ami                    = "ami-01fb4de0e9f8f22a7"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -90,7 +90,7 @@ resource "aws_instance" "backend_instance" {
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = "ami-0cb4a336f1f3acee6"
+  ami                    = "ami-01fb4de0e9f8f22a7"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
