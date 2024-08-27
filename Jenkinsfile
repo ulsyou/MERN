@@ -6,7 +6,7 @@ pipeline {
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
         PATH = "$HOME/.local/bin:$PATH" 
-        AWS_DEFAULT_REGION = 'us-east-1'
+        AWS_DEFAULT_REGION = 'ap-southeast-2'
         KEY_NAME = 'my-key'
         KEY_FILE = 'key.pem'
     }
