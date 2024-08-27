@@ -91,6 +91,8 @@ resource "aws_instance" "backend_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
+  key_name = "key"
+
   tags = {
     Name = "webkidshop-backend"
   }  
@@ -104,6 +106,7 @@ resource "aws_instance" "frontend_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
+  key_name = "key"
   tags = {
     Name = "webkidshop-frontend"
   }  
