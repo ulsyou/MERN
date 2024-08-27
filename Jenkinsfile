@@ -38,19 +38,24 @@ pipeline {
                     sshagent(credentials: ['ec2-ssh-key']) {
                         sh """
                             ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-237-92-167.ap-southeast-2.compute.amazonaws.com << 'EOF'
-                   
+                            
                             sudo yum install -y git
-                            
+        
                             mkdir -p ~/deployment
-                            
                             cd ~/deployment
-                            git clone https://github.com/ulsyou/MERN.git
-                            cd MERN/WebKidShop_FE
-                            
+        
+                            git clone https://github.com/ulsyou/MERN.git || { echo 'Git clone failed'; exit 1; }
+        
+                            cd MERN/WebKidShop_FE || { echo 'Failed to change directory'; exit 1; }
+        
                             sudo yum install -y nodejs npm
-                            
-                            npm install
-                            npm run build
+        
+                            npm install || { echo 'npm install failed'; exit 1; }
+        
+                            npm run build || { echo 'npm run build failed'; exit 1; }
+        
+                            npm test || { echo 'npm test failed'; exit 1; }
+        
                             npm start
                             EOF
                         """
