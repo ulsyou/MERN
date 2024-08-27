@@ -20,6 +20,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
+                    whoami
                     # Install pip if not available
                     which pip3 || sudo apt-get update && sudo apt-get install -y python3-pip
 
