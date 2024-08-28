@@ -6,8 +6,6 @@ pipeline {
         FRONTEND_DIR = 'WebKidShop_FE'
         BACKEND_DIR = 'WebKidShop_BE'
         AWS_DEFAULT_REGION = 'ap-southeast-2'
-        KEY_NAME = 'my-key'
-        PATH = "$HOME/.local/bin:$PATH"
     }
 
     stages {
@@ -16,39 +14,7 @@ pipeline {
                 checkout scm
             }
         }
-        
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    # Check and install pip if not available
-                    if ! command -v pip3 &> /dev/null; then
-                        echo "Installing pip3..."
-                        sudo apt-get update && sudo apt-get install -y python3-pip
-                    fi
-        
-                    # Install or upgrade AWS CLI
-                    echo "Installing/upgrading AWS CLI..."
-                    pip3 install --user --upgrade awscli
-        
-                    # Check Terraform version
-                    if command -v terraform &> /dev/null; then
-                        echo "Terraform is already installed:"
-                        terraform version
-                    else
-                        echo "Installing Terraform..."
-                        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-                        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
-                        sudo apt-get update && sudo apt-get install -y terraform
-                    fi
-        
-                    # Print versions
-                    echo "Installed versions:"
-                    terraform version
-                    aws --version
-                '''
-            }
-        }
-        
+
         stage('Terraform') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
@@ -59,44 +25,40 @@ pipeline {
                         dir("${TERRAFORM_DIR}") {
                             sh 'terraform init -no-color'
                             sh 'terraform plan -out=tfplan -no-color'
-                            sh 'terraform show -no-color tfplan'
                             sh 'terraform apply -auto-approve -no-color'
-                            sh 'terraform state list -no-color'
-                            
-                            def subnetId = sh(script: 'terraform output -no-color subnet_id || echo "No Subnet ID"', returnStdout: true).trim()
-                            def instanceId = sh(script: 'terraform output -no-color backend_instance_id || echo "No Instance ID"', returnStdout: true).trim()
-                            def privateIp = sh(script: 'terraform output -no-color backend_instance_private_ip || echo "No Private IP"', returnStdout: true).trim()
-                            
-                            echo "Subnet ID: ${subnetId}"
-                            echo "EC2 Instance ID: ${instanceId}"
-                            echo "EC2 Private IP: ${privateIp}"
-
-                            sh 'aws ec2 describe-instances'
-                            sh 'aws s3api list-buckets'
                         }
                     }
                 }
             }
         }
 
-        stage('Manage Key Pair') {
+        stage('Deploy to Frontend EC2') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'aws-credentials', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    script {
-                        def keyExists = sh(script: "aws ec2 describe-key-pairs --key-names ${KEY_NAME} --query 'KeyPairs[*].[KeyName]' --output text", returnStatus: true) == 0
-
-                        if (!keyExists) {
-                            echo "Creating new key pair..."
-                            sh """
-                            aws ec2 create-key-pair --key-name ${KEY_NAME} --query 'KeyMaterial' --output text > ${KEY_NAME}.pem
-                            chmod 400 ${KEY_NAME}.pem
-                            """
-                        } else {
-                            echo "Key pair already exists."
-                        }
+                script {
+                    sshagent(credentials: ['ec2-ssh-key']) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-237-92-167.ap-southeast-2.compute.amazonaws.com << 'EOF'
+                            
+                            sudo yum install -y git
+        
+                            mkdir -p ~/deployment
+                            cd ~/deployment
+        
+                            git clone https://github.com/ulsyou/MERN.git || { echo 'Git clone failed'; exit 1; }
+        
+                            cd MERN/WebKidShop_FE || { echo 'Failed to change directory'; exit 1; }
+        
+                            sudo yum install -y nodejs npm
+        
+                            npm install || { echo 'npm install failed'; exit 1; }
+        
+                            npm run build || { echo 'npm run build failed'; exit 1; }
+        
+                            npm test || { echo 'npm test failed'; exit 1; }
+        
+                            npm start
+                            EOF
+                        """
                     }
                 }
             }
@@ -118,10 +80,10 @@ pipeline {
     
     post {
         success {
-            echo 'Build Success!'
+            echo 'Deployment Success!'
         }
         failure {
-            echo 'Build Failed.'
+            echo 'Deployment Failed.'
         }
     }
 }

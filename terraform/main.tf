@@ -20,7 +20,35 @@ resource "aws_vpc" "default" {
 resource "aws_subnet" "default" {
   vpc_id            = aws_vpc.default.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+
+  availability_zone = "ap-southeast-2a"
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.default.id
+}
+
+resource "aws_route_table" "example" {
+  vpc_id = aws_vpc.default.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+}
+
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.default.id
+  route_table_id = aws_route_table.example.id
+}
+
+resource "aws_eip" "frontend_instance" {
+  domain = "vpc"
+}
+
+resource "aws_eip_association" "frontend_instance_eip_association" {
+  instance_id = aws_instance.frontend_instance.id
+  allocation_id = aws_eip.frontend_instance.id
 }
 
 resource "aws_security_group" "allow_web" {
@@ -57,11 +85,11 @@ resource "aws_instance" "backend_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
+  key_name = "key"
+
   tags = {
     Name = "webkidshop-backend"
-  }
-  user_data = base64encode(file("${path.module}/user-data.sh"))
-  
+  }  
   lifecycle {
     create_before_destroy = true
   }
@@ -72,6 +100,7 @@ resource "aws_instance" "frontend_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
+  key_name = "key"
   tags = {
     Name = "webkidshop-frontend"
   }
