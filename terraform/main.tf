@@ -1,5 +1,14 @@
 provider "aws" {
-  region = "ap-southeast-2"
+  access_key                  = "test"
+  secret_key                  = "test"
+  region                      = "us-east-1"
+  s3_use_path_style           = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  endpoints {
+    ec2 = "http://localhost:4566"
+    s3  = "http://localhost:4566"
+  }
 }
 
 resource "aws_vpc" "default" {
@@ -11,30 +20,7 @@ resource "aws_vpc" "default" {
 resource "aws_subnet" "default" {
   vpc_id            = aws_vpc.default.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "ap-southeast-2a"
-}
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.default.id
-}
-
-resource "aws_route_table" "example" {
-  vpc_id = aws_vpc.default.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-  }
-}
-
-resource "aws_route_table_association" "a" {
-  subnet_id      = aws_subnet.default.id
-  route_table_id = aws_route_table.example.id
-}
-
-resource "aws_eip" "frontend_instance" {
-  instance = aws_instance.frontend_instance.id
-  domain   = "vpc"
+  availability_zone = "us-east-1a"
 }
 
 resource "aws_security_group" "allow_web" {
@@ -46,14 +32,6 @@ resource "aws_security_group" "allow_web" {
     description = "HTTP"
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTP"
-    from_port   = 3000
-    to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -75,7 +53,7 @@ resource "aws_security_group" "allow_web" {
 }
 
 resource "aws_instance" "backend_instance" {
-  ami                    = "ami-01fb4de0e9f8f22a7"
+  ami                    = "ami-12345678"  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
@@ -90,14 +68,19 @@ resource "aws_instance" "backend_instance" {
 }
 
 resource "aws_instance" "frontend_instance" {
-  ami                    = "ami-01fb4de0e9f8f22a7"
+  ami                    = "ami-12345678"  
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.allow_web.id]
   tags = {
     Name = "webkidshop-frontend"
   }
-  user_data = base64encode(file("${path.module}/user-data.sh"))
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y python3
+              EOF
+  )
   
   lifecycle {
     create_before_destroy = true
