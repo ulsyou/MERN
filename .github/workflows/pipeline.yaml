@@ -53,7 +53,7 @@ jobs:
           cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
           resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
 
-- name: Validate and Copy Modules
+      - name: Validate and Copy Modules
         run: |
           POD_NAME=$(kubectl get pods -n ${{ env.NAMESPACE }} -l app.kubernetes.io/name=odoo -o custom-columns=":metadata.name" | xargs)
           
