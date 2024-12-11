@@ -13,7 +13,7 @@ on:
           - intranet-prod
       MODULES:
         type: string
-        description: Modules deployment
+        description: Modules to deploy (comma-separated or "All")
         required: true
         default: ''
 
@@ -53,27 +53,29 @@ jobs:
           cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
           resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
 
-      - name: Validate and Copy Modules
+- name: Validate and Copy Modules
         run: |
           POD_NAME=$(kubectl get pods -n ${{ env.NAMESPACE }} -l app.kubernetes.io/name=odoo -o custom-columns=":metadata.name" | xargs)
           
-          if [ -z "${{ inputs.MODULES }}" ]; then
-            echo "Error: No modules specified"
-            exit 1
+          MODULES_PATH="/home/runner/work/intranet/intranet/Odoo/modules"
+          
+          if [[ "${{ inputs.MODULES }}" == "All" || "${{ inputs.MODULES }}" == "all" ]]; then
+            echo "Copying all modules from $MODULES_PATH"
+            kubectl cp "$MODULES_PATH/" ${{ env.NAMESPACE }}/$POD_NAME:/bitnami/odoo/addons/
+          else
+            IFS=',' read -ra MODULES_ARRAY <<< "${{ inputs.MODULES }}"
+            
+            for MODULE in "${MODULES_ARRAY[@]}"; do
+              MODULE=$(echo "$MODULE" | xargs)
+              
+              if [ ! -d "$MODULES_PATH/$MODULE" ]; then
+                echo "Error: Module $MODULE does not exist"
+                exit 1
+              fi
+              
+              kubectl cp "$MODULES_PATH/$MODULE" ${{ env.NAMESPACE }}/$POD_NAME:/bitnami/odoo/addons/
+            done
           fi
-          
-          IFS=',' read -ra MODULES_ARRAY <<< "${{ inputs.MODULES }}"
-          
-          for MODULE in "${MODULES_ARRAY[@]}"; do
-            MODULE=$(echo "$MODULE" | xargs)
-            
-            if [ ! -d "/home/runner/work/intranet/intranet/Odoo/modules/$MODULE" ]; then
-              echo "Error: Module $MODULE does not exist"
-              exit 1
-            fi
-            
-            kubectl cp "/home/runner/work/intranet/intranet/Odoo/modules/$MODULE" ${{ env.NAMESPACE }}/$POD_NAME:/bitnami/odoo/addons/
-          done
 
       - name: Apply customize modules
         run: |
