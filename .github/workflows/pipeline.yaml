@@ -13,6 +13,7 @@ on:
           - intranet-prod
       MODULES:
         type: string
+        description: Modules deployment
         required: true
         default: ''
 
