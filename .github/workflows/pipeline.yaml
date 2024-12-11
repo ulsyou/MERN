@@ -1,0 +1,84 @@
+name: Odoo Modules Deployment Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        type: choice
+        description: Environment
+        required: true
+        default: 'intranet-dev'
+        options:
+          - intranet-dev
+          - intranet-prod
+      MODULES:
+        type: string
+        required: true
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: gemini
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      NAMESPACE: ${{ inputs.ENVIRONMENT }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.11.0" # LTS version 15/11/2024
+    
+      - name: Kubernetes context
+        uses: azure/aks-set-context@v4
+        with:
+          cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
+          resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
+
+      - name: Validate and Copy Modules
+        run: |
+          POD_NAME=$(kubectl get pods -n ${{ env.NAMESPACE }} -l app.kubernetes.io/name=odoo -o custom-columns=":metadata.name" | xargs)
+          
+          if [ -z "${{ inputs.MODULES }}" ]; then
+            echo "Error: No modules specified"
+            exit 1
+          fi
+          
+          IFS=',' read -ra MODULES_ARRAY <<< "${{ inputs.MODULES }}"
+          
+          for MODULE in "${MODULES_ARRAY[@]}"; do
+            MODULE=$(echo "$MODULE" | xargs)
+            
+            if [ ! -d "/home/runner/work/intranet/intranet/Odoo/modules/$MODULE" ]; then
+              echo "Error: Module $MODULE does not exist"
+              exit 1
+            fi
+            
+            kubectl cp "/home/runner/work/intranet/intranet/Odoo/modules/$MODULE" ${{ env.NAMESPACE }}/$POD_NAME:/bitnami/odoo/addons/
+          done
+
+      - name: Apply customize modules
+        run: |
+          POD_NAME=$(kubectl get pods -n ${{ env.NAMESPACE }} -l app.kubernetes.io/name=odoo -o custom-columns=":metadata.name" | xargs)
+          kubectl rollout restart deployment $POD_NAME -n ${{ env.NAMESPACE }}
+        
+      - name: Check Pods
+        run: |
+          kubectl get pods -n ${{ env.NAMESPACE }}
